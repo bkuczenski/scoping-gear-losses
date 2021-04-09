@@ -1,0 +1,1146 @@
+title: "Catch Data Visualization"
+author: "Camila Vargas"
+date: "7/22/2020"
+output: pdf_document
+---
+
+This scripts creates visulizations to compare fisheries data from FAO, Watson and Gilman's discards data base.
+
+These plots were used for the mid-term presentationto TNC in August 2020.
+
+## Set-up
+
+```{r setup, include=FALSE}
+source(here::here("R/set_up.R"))
+source(here::here("R/fao.R"))
+source(here::here("R/watson.R"))
+source(here::here("R/discards.R"))
+
+##install and load packeges
+load_pak(common_packages)
+load_pak(plotting_pkgs)
+
+##colors
+#d6c5c5 light pink, 
+#c18b8b dark pink, 
+#c1d6dd light blue, 
+#91a3bd" light blue dark
+```
+
+## Import clean data
+
+1. FAO landings clean data
+2. Watson landing, UUI and discard clean
+3. Discards
+```{r}
+
+fao_clean <- get_fao_landings() %>% 
+  fao_all_names()
+
+watson_clean <- get_watson_data() %>% 
+  watson_all_names()
+
+discards_clean <- get_discard_data() %>% 
+  discards_all_names()
+
+```
+
+## Read Comparison data
+
+```{r}
+
+compare_data <- read_csv(here::here("output/int/watson_fao_all_years.csv")) %>% 
+  filter(year %in% c(2010:2015)) %>%
+  mutate_if(is.numeric, round, 2)
+  
+
+totals_by_year <- compare_data %>% 
+  group_by(year) %>% 
+  summarise(fao_landings = sum(landings_total, na.rm = T),
+            watson_reported_industrial = sum(reported_total_industrial, na.rm = T),
+            watson_reported_non_industrial = sum(reported_total_non_industrial, na.rm = T),
+            wastson_iuu_industrial = sum(iuu_total_industrial, na.rm = T),
+            watson_iuu_non_industrial = sum(iuu_total_non_industrial, na.rm = T),
+            watson_discards_industrial = sum(discards_total_industrial, na.rm = T),
+            watson_discards_non_industrial = sum(discards_total_non_industrial, na.rm = T)) %>% 
+  mutate(Reported = watson_reported_industrial + watson_reported_non_industrial,
+         IUU = wastson_iuu_industrial + watson_iuu_non_industrial,
+         Discards = watson_discards_industrial + watson_discards_non_industrial)
+
+
+```
+
+
+Calculating FAO total landings per year
+```{r}
+
+fao_summary_year <- fao_clean %>% 
+  group_by(year) %>% 
+  summarise(tones = sum(landings, na.rm = T)) %>% 
+  mutate(tons_2 = tones/1000000) %>% ##to make y-axis 10^6
+  mutate(type = "FAO" ) %>% 
+  ungroup()
+```
+
+
+Calculating Watson totals per year (Reported, IUU and Discards) and totals by year and sector
+
+```{r}
+watson_summary_year <- watson_clean %>% 
+  group_by(year) %>% 
+  summarise(Reported = sum(reported, na.rm = T),
+            IUU = sum(iuu_total, na.rm = T),
+            Discards = sum(discards, na.rm = T)) %>%
+  pivot_longer(2:4, names_to = "type", values_to = "tones") %>% 
+  mutate(tons_2 = tones/1000000) %>%  ##to make y-axis 10^6
+  ungroup()
+  
+
+##We need countries to make plots by country
+watson_summary_year_sector <- watson_clean %>%
+  group_by(iso3_code, year, productive_sector) %>% 
+  summarise(Reported = sum(reported, na.rm = T),
+            IUU = sum(iuu_total, na.rm = T),
+            Discards = sum(discards, na.rm = T)) %>% 
+  pivot_longer(4:6, names_to = "type", values_to = "tones") %>% 
+  mutate(types_all = paste0(productive_sector,"_", type)) %>% 
+  mutate(tons_2 = tones/1000000) %>% 
+  ungroup() %>%
+  mutate(types_all = as.factor(types_all)) %>% 
+  mutate(types_all = fct_relevel(types_all, c("non_industrial_Discards", "industrial_Discards", "non_industrial_IUU", "industrial_IUU", "non_industrial_Reported", "industrial_Reported")))
+  
+  
+  
+```
+
+
+Calculating total discards estimation per year
+```{r}
+discards_summary_year <- discards_clean %>% 
+  summarise(Discards = sum(discards, na.rm = T),
+            Reported = sum(landings, na.rm = T)) %>% 
+  pivot_longer(1:2, names_to = "type", values_to = "tones") %>% 
+  mutate(tons_2 = tones/1000000) %>% 
+  mutate(year = "~2010-2014")
+```
+
+
+## Plots
+
+### Watson and FAO (no sector)
+
+```{r}
+##FAO line graph, Watson stack bars (Reportes, IUU and Discards)
+fao_watson_plot <- ggplot(watson_summary_year %>% 
+                            filter(year %in% c(2010:2015)))+
+  geom_bar(aes(x = year, y= tons_2, fill = type),
+           stat = "identity")+
+  scale_fill_manual(values = c("#8e464e", "#335498", "#002060"))+
+  geom_line(data = fao_summary_year %>% 
+                   filter(year %in% c(2010:2015)), 
+            aes(x = year, y = tons_2), size = 2, color="#ca8603")+
+  geom_point(data = fao_summary_year %>% 
+                    filter(year %in% c(2010:2015)),
+             aes(x = year, y = tons_2), size = 3, color="#ca8603")+
+  scale_x_continuous(breaks = seq(2010,2015, 1))+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 125))+  ##rmoves white space between x axis and bar
+  theme_classic()+
+  labs(title = paste0( "<b><span style = 'font-size: 16pt'>Fisheries data from two sources",
+                       "</span></span></b>",
+                       "</b><br> <span style = 'font-size:12pt'>",
+                       "Total landings according to ",
+                       "<span style = 'color:#ca8603;'>",
+                       "**FAO** ",
+                       "</span></span></b>",
+                       "and Watson's ",
+                       "<span style = 'color:#002060;'>",
+                       "**Reported,** ",
+                       "</span></span></b>",
+                       "<span style = 'color:#335498;'>",
+                       "**IUU** ",
+                       "</span></span></b>",
+                       "and ",
+                       "<span style = 'color:#8e464e;'>",
+                       "**Discards**",
+                       "</span></span></b>"))+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white")) +
+  theme(plot.title.position = "plot",
+        legend.position = "none")+
+  xlab("Year")+
+  ylab(expression(Tones~(~10^{6}))) ##what ever is in {} is a superscripts (for subscripts use[]))
+
+```      
+
+### Watson and FAO data 2010-2015 per sector
+
+```{r}  
+
+##Plot showing industrial and non-industrial differeces
+fao_watson_sector_plot <- ggplot(watson_summary_year_sector %>% 
+                                   filter(year %in% c(2010:2015)))+
+  geom_bar(aes(x = year, y= tons_2, fill = types_all),
+           stat = "identity",
+           width = 0.6)+
+  geom_line(data = fao_summary_year %>% 
+              filter(year %in% c(2010:2015)),
+            aes(x = year, y = tons_2), size = 1.5, color="#ca8603")+
+  geom_point(data = fao_summary_year %>% 
+               filter(year %in% c(2010:2015)),
+             aes(x = year, y = tons_2), size = 2.5, color="#ca8603")+
+  scale_fill_manual(values = c("#d6c5c5","#c18b8b", "#c1d6dd", "#91a3bd", "#4a4d76", "#1d2247"))+
+  scale_x_continuous(breaks = seq(2010,2015, 1))+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 125))+  ##rmoves white space between x axis and bar
+  theme_classic()+
+  labs(title = paste0( "<b><span style = 'font-size: 14pt'> Comparing ",
+                       "<span style = 'color:#ca8603;'>",
+                       "FAO",
+                       "</span></span></b>",
+                       "<b><span style = 'font-size: 14pt'> and Watson's fisheries data ",
+                       "</span></span></b>"))+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white"))+
+  labs(fill = "Watson's data",
+       x= "Year",
+       y = expression(Tones~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 12),
+        legend.title = element_text(face = "bold"))
+
+
+##Color codes! !!!Make one vector!
+##Reported IND #1d2247
+##Reported nonInd #4a4d76
+##IUU IND #91a3bd
+##IUU non-ind #c1d6dd
+##discards IND #d6c5c5
+##discards nonIND  #c18b8b
+
+```
+
+
+### FAO, Watson and Discards Plot
+Camparing FAO data (2010-2018) and Watson data (2010-2015) with discard data (2010-2014 average)
+
+
+Data wriangling
+```{r}
+watson_discard <- rbind(watson_summary_year, discards_summary_year)
+  #mutate(year = as.character(year)) ## to be able to plot skiping years 2016 and 2017
+
+```
+
+Plot
+```{r}
+
+##plotting the discard bar on the side of the fao_watson plot
+fao_watson_plot_2 <- ggplot(watson_summary_year %>%
+                                    filter(year %in% c(2010:2015)))+
+  geom_bar(aes(x = year, y= tons_2, fill = type),
+           stat = "identity",
+           width = 0.8)+
+  scale_fill_manual(values = c("#8e464e", "#335498", "#002060"))+
+  geom_line(data = fao_summary_year %>% 
+                   filter(year %in% c(2010:2018)), 
+            aes(x = year, y = tons_2), size = 2, color="#ca8603")+
+  geom_point(data = fao_summary_year %>% 
+                    filter(year %in% c(2010:2018)),
+             aes(x = year, y = tons_2), size = 3, color="#ca8603")+
+  scale_x_continuous(breaks = seq(2010,2018, 1))+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 125))+
+  theme_classic()+
+  labs(title = paste0( "<b><span style = 'font-size: 16pt'>Fisheries data from three sources",
+                       "</span></span></b>",
+                       "</b><br> <span style = 'font-size:12pt'>",
+                       "Total landings according to ",
+                       "<span style = 'color:#ca8603;'>",
+                       "**FAO,** ",
+                       "</span></span></b>",
+                       "<span style = 'font-size:12pt'>",
+                       "and, ",
+                       "<span style = 'color:#002060;'>",
+                       "**Reported,** ",
+                       "</span></span></b>",
+                       "<span style = 'color:#335498;'>",
+                       "<span style = 'font-size:12pt'>",
+                       "**IUU** ",
+                       "</span></span></b>",
+                       "<span style = 'font-size:12pt'>",
+                       "and ",
+                       "<span style = 'color:#8e464e;'>",
+                       "<span style = 'font-size:12pt'>",
+                       "**Discards** ",
+                       "</span></span></b>",
+                       "<span style = 'font-size:12pt'>",
+                       "according to Watson (2010-2015) and discards estimates (~2010-2014)"))+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 10,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0), #top,right,bottom,left.
+      fill = "white")) +
+  theme(plot.title.position = "plot",
+        legend.position = "none")+
+  xlab("Year")+
+  ylab(expression(Tones~(~10^{6}))) ##what ever is in {} is a superscripts (for subscripts use[]))
+    
+
+
+# ##For regular title use
+#   labs(fill = element_blank(),
+#        title = "FAO landings (yellow), with Watson's data(2010-15) and discard estimates (2018)",
+#        x= "Year",
+#        y = expression(Tones~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+#   theme(legend.position = "bottom")
+
+
+
+discard_plot <- ggplot(discards_summary_year)+
+  geom_bar(aes(x = year, y= tons_2, fill = type),
+           stat = "identity",
+           width = 0.2)+
+  scale_fill_manual(values = c("#8e464e", "#002060"))+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 125))+
+  theme_classic() +
+  theme(legend.position = "none", 
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+watson_fao_discard_plot <- fao_watson_plot_2 + discard_plot
+
+```
+
+
+## Comparison by country
+
+Data Wrangling
+```{r}
+
+years_plot <- c(2010:2015)
+
+fao_by_country <- fao_clean %>% 
+  group_by(year,iso3_code) %>%
+  summarise(tones = sum(landings, na.rm = T)) %>% 
+  filter(year %in% years_plot) %>% 
+  ungroup() %>% 
+  arrange(desc(tones)) %>% 
+  mutate(tons_2 = tones/1000000) ##to make y-axis 10^6
+
+
+watson_by_country <- watson_clean %>% 
+group_by(year,iso3_code) %>%
+  summarise(Reported = sum(reported, na.rm = T),
+            IUU = sum(iuu_total, na.rm = T),
+            Discards = sum(discards, na.rm = T)) %>% 
+  filter(year %in% years_plot) %>% 
+  pivot_longer(3:5, names_to = "type", values_to = "tones") %>% 
+  ungroup() %>% 
+  mutate(tons_2 = tones/1000000) %>% ##to make y-axis 10^6
+  mutate(iso3_code = as.factor(iso3_code))
+
+
+```
+
+Plot for any country for year 2010-2015. TO select another years range modify vector `years_plot` above.
+
+Update the `country_to_plot` vector with the necesary iso3_code of the country to plot.
+
+```{r}
+
+country_to_plot <- "CHN"
+
+fao_watson_plot_country <- ggplot(watson_by_country %>% 
+                                    filter(iso3_code == country_to_plot))+
+  geom_bar(aes(x = year, y= tons_2, fill = type),
+           stat = "identity")+
+  geom_line(data = fao_by_country %>% 
+              filter(iso3_code == country_to_plot),
+            aes(x = year, y = tons_2), size = 1.5, color="#ca8603")+
+  geom_point(data = fao_by_country %>% 
+              filter(iso3_code == country_to_plot), 
+             aes(x = year, y = tons_2), size = 2.5, color="#ca8603")+
+  scale_fill_manual(values = c("#8e464e", "#335498", "#002060"))+
+  scale_x_continuous(breaks = seq(2010,2015, 1))+
+  scale_y_continuous(expand = c(0, 0))+ 
+  theme_classic()+
+  labs(fill = "Watson's data",
+       title = paste0("Comparing FAO and Watson's fisheries data for ", country_to_plot),
+       x= "Year",
+       y = expression(Tones~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+  theme(legend.position = "bottom")
+  
+```
+
+
+Identifying top countries per year.
+
+```{r}
+
+top_10_fao <- fao_by_country %>% 
+  group_by(year) %>% 
+  top_n(12, tones) %>% 
+  mutate(total_year_top10 = sum(tones, na.rm = T)) %>% 
+  ungroup() %>% 
+  select(year, iso3_code, tones_country= tones, total_year_top10) %>% 
+  left_join(fao_summary_year, by = "year") %>% 
+  mutate(pct_top10 = (total_year_top10/tones)*100)
+
+##There are 13 "top countries" we will remove THA becasue it is only withing the top 12 one year.
+
+top_10_watson <- watson_by_country %>% 
+  group_by(year, iso3_code) %>% 
+  summarise(total_all = sum(tones, na.rm = T)) %>% 
+  top_n(12, total_all) %>% 
+  arrange(desc(total_all))
+
+##Top 12 countries in Watson NOTE 
+sort(unique(top_10_watson$iso3_code)) ## Same than in FAO!
+
+
+##NOTE: these are the top countries between 2010-2015
+```
+
+
+```{r}
+
+
+top_10_watson_ind <- watson_summary_year_sector %>% 
+  filter(productive_sector == "industrial",
+         year %in% c(2010:2015)) %>% 
+  group_by(year, iso3_code) %>% 
+  summarise(tons_total = sum(tones, na.rm = T)) %>% 
+  top_n(10, tons_total)
+
+sort(unique(top_10_watson_ind$iso3_code))
+
+top_10_watson_noneInd <- watson_summary_year_sector %>% 
+  filter(productive_sector != "industrial",
+         year %in% c(2010:2015)) %>% 
+  group_by(year, iso3_code) %>% 
+  summarise(tons_total = sum(tones, na.rm = T)) %>% 
+  top_n(10, tons_total)
+
+sort(unique(top_10_watson_noneInd$iso3_code))
+
+```
+
+Considering bothe sectors in the watson data, both Watson  and FAO have the same top 12 countries between 2010-2015
+
+"CHL" "CHN" "IDN" "IND" "JPN" "KOR "NOR" "PER" "PHL" "RUS" "USA" "VNM"
+
+
+Looking into the **indutrial sector** on the Watson data, the top 13 countries between 2010 and 2015 are
+"CHL" "CHN" "ESP" "IDN" "IND" "ISL" "JPN" "MAR" "NOR" "PER" "PHL" "RUS" "USA"
+Where ISL and MAR are present just one year (2012 and 2015, respectivley).
+
+and the **none-industrial**
+"CHN" "IDN" "IND" "JPN" "KOR" "MEX" "MYS" "PER" "PHL" "THA" "USA" "VNM"
+Where PHL is present only in 2012
+
+
+### Creating vector with top 12 countries
+```{r}
+
+##Fao and Watson top 12 for 2010:2015
+
+top12_countries <- c("CHN", "IDN", "RUS", "USA", "PER", "IND", "JPN", "NOR", "VNM", "PHL", "KOR","CHL")
+
+
+##Order descending according to average landed tones form 2010/2015
+watson_top12_Ind <- c("CHN", "RUS", "PER", "USA", "NOR", "CHL", "IDN","JPN" , "IND", "PHL", "ISL", "ESP")
+
+watson_top_12_Nonind <- c("CHN", "IDN", "VNM", "IND", "JPN","USA", "THA", "MEX", "MYS", "PER","KOR", "PHL")
+
+```
+
+
+Top 12 country Plot
+
+```{r}
+fao_watson_top12_plot <- ggplot(watson_by_country %>% 
+                            filter(iso3_code %in% c(top12_countries)) %>% 
+                              mutate(iso3_code = fct_relevel(iso3_code, levels = rev(c("CHN", "IDN", "RUS", "USA", "PER", "IND", "JPN", "NOR", "VNM", "PHL", "KOR","CHL")))))+
+  geom_bar(aes(x = year, y= tons_2, fill = type),
+           stat = "identity")+
+  scale_fill_manual(values = c("#8e464e", "#335498", "#002060"))+
+  geom_line(data = fao_by_country %>% 
+                   filter(iso3_code %in% c(top12_countries),
+                          year %in% c(2010:2015)), 
+            aes(x = year, y = tons_2), size = 0.8, color="#ca8603")+
+  geom_point(data = fao_by_country %>% 
+                    filter(iso3_code %in% c(top12_countries),
+                           year %in% c(2010:2015)),
+             aes(x = year, y = tons_2), size = 1.2, color="#ca8603")+
+  scale_x_continuous(breaks = seq(2010,2015, 1))+
+  scale_y_continuous(expand = c(0, 0))+  ##rmoves white space between x axis and bar
+  theme_classic()+
+  facet_wrap(~iso3_code)+
+  labs(title = paste0( "<b><span style = 'font-size: 16pt'>Total Fisheries capture for top 12 countries",
+                       "</span></span></b>",
+                       "</b><br> <span style = 'font-size:12pt'>",
+                       "Total landings according to ",
+                       "<span style = 'color:#ca8603;'>",
+                       "**FAO** ",
+                       "</span></span></b>",
+                       "and Watson's ",
+                       "<span style = 'color:#002060;'>",
+                       "**Reported,** ",
+                       "</span></span></b>",
+                       "<span style = 'color:#335498;'>",
+                       "**IUU** ",
+                       "</span></span></b>",
+                       "and ",
+                       "<span style = 'color:#8e464e;'>",
+                       "**Discards**",
+                       "</span></span></b>"))+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white")) +
+  theme(plot.title.position = "plot",
+        legend.position = "none")+
+  xlab("Year")+
+  ylab(expression(Tones~(~10^{6}))) ##what ever is in {} is a superscripts (for subscripts use[]))
+  
+## For normal title
+
+#   labs(fill = "Watson's data",
+#        title = "Comparing FAO and Watson's fisheries data",
+#        x= "Year",
+#        y = expression(Tones~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+#   theme(legend.position = "bottom")
+```
+
+
+### Partition by gear8 per fishing sector (Watson data)
+
+Data wrangling
+```{r}
+
+master_gear_watson <- read_csv(here::here("mapping_tables/master_gear_mapping.csv")) %>% 
+  distinct(WatsonGearCode, .keep_all = TRUE)
+
+watson_gear8 <- watson_clean %>%
+  rename(WatsonGearCode = gear) %>% 
+  left_join(master_gear_watson, by = "WatsonGearCode")
+
+
+watson_total_gear_year_sector <- watson_gear8 %>%
+    group_by(iso3_code, year, GilmanGear8Name, productive_sector) %>%
+    summarise(total_reported_gear_t = sum(reported, na.rm = T),
+           total_iuu_gear_t = sum(iuu_total, na.rm = T),
+           total_discards_gear_t = sum(discards, na.rm = T)) %>%
+  mutate(total_catch_gear_t = total_reported_gear_t + total_iuu_gear_t + total_discards_gear_t) %>% 
+    ungroup() %>% 
+  mutate(iso3_code = as.factor(iso3_code))
+
+
+fraction_gear_year_sector <- watson_total_gear_year_sector %>%
+    group_by(iso3_code , year, productive_sector) %>%
+    mutate(total_reported_year_t = sum(total_reported_gear_t, na.rm = T),
+           total_iuu_year_t = sum(total_iuu_gear_t, na.rm = T),
+           total_discards_year_t = sum(total_discards_gear_t, na.rm = T)) %>%
+    ungroup() %>%
+    mutate(gear_fraction_reported = total_reported_gear_t/total_reported_year_t) %>%
+    mutate(gear_fraction_full = (total_reported_gear_t + total_iuu_gear_t + total_discards_gear_t) / (total_reported_year_t + total_iuu_year_t + total_discards_year_t)) %>%
+  mutate_if(is.numeric, round, 5)
+
+
+
+watson_gear8_fraction_ind <- fraction_gear_year_sector %>% 
+  filter(productive_sector == "industrial",
+         iso3_code %in% c(watson_top12_Ind),
+         year %in% c(2010:2015)) 
+
+watson_gear8_fraction_Nind <- fraction_gear_year_sector %>% 
+  filter(productive_sector != "industrial",
+         iso3_code %in% c(watson_top_12_Nonind),
+         year %in% c(2010:2015))
+
+```
+
+Color Pallets
+
+```{r}
+
+pal_antique <- rev(c("#855C75", "#D9AF6B", "#AF6458", "#736F4C", "#526A83", "#625377", "#68855C", "#9C9C5E", "#A06177", "#8C785D", "#467378", "#7C7C7C"))
+
+
+pal_prism <- rev(c("#5F4690", "#1D6996", "#38A6A5", "#0F8554", "#73AF48", "#EDAD08", "#E17C05", "#CC503E", "#94346E", "#6F4070", "#994E95", "#666666"))
+
+pal_safe <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+pal_pastel <-  rev(c("#66C5CC", "#F6CF71", "#F89C74", "#DCB0F2", "#87C55F", "#9EB9F3", "#FE88B1", "#C9DB74", "#8BE0A4", "#B497E7", "#D3B484", "#B3B3B3"))
+
+pal_vivid <- c("#E58606", "#5D69B1", "#52BCA3", "#99C945", "#CC61B0", "#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#ED645A", "#CC3A8E", "#A5AA99")
+
+```
+
+Plot for industrial catch
+
+
+```{r}
+partition_gear_Ind_plot_scale <- ggplot(watson_gear8_fraction_ind, 
+                                  aes(x = iso3_code,
+               y = gear_fraction_reported,
+               fill = GilmanGear8Name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  facet_wrap(~year)+
+  scale_fill_manual(values = pal_prism, 
+                    guide= guide_legend(nrow=1, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Reported industrial catch partitioned by gear type (reported)",
+       x= "Country",
+       y = element_blank())+
+  theme(legend.position = "bottom",
+        legend.box = "horizontal")
+```
+
+
+Plot of non-industrial catch
+```{r}
+
+partition_gear_Nind_plot <- ggplot(watson_gear8_fraction_Nind, 
+                                  aes(x = iso3_code,
+               y = gear_fraction_reported,
+               fill = GilmanGear8Name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  facet_wrap(~year)+
+  scale_fill_manual(values = pal_antique, 
+                    guide= guide_legend(nrow=1, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Reported non-industrial catch partitioned by gear type",
+       x= "Country",
+       y = element_blank())+
+  theme(legend.position = "bottom",
+        legend.box = "horizontal")
+
+
+
+```
+
+
+Saclar and Normalize gear partition plot side by side using cowplot
+
+1. Industrial
+```{r}
+
+##plot 1 scaled values of top 12 countrus for 2015
+
+partition_gear_Ind_plot_scale <- ggplot(fraction_gear_year_sector %>% 
+                                          filter(productive_sector == "industrial",
+                                                 iso3_code %in% c(watson_top12_Ind),
+                                                 year == 2015) %>% 
+                                          mutate(iso3_code = fct_relevel(iso3_code, rev(c("CHN", "RUS",  "USA", "PER", "NOR","IDN","JPN" , "IND", "PHL","ESP", "ISL", "CHL")))),
+              aes(x = iso3_code,
+               y = gear_fraction_reported,
+               fill = GilmanGear8Name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = pal_prism, 
+                    guide= guide_legend(nrow=2, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Gear fraction",
+       x= "Country",
+       y = element_blank())+
+  theme(legend.position = "none")
+
+##Plot 2 not to scale,
+
+partition_gear_Ind_plot_catch <- ggplot(watson_total_gear_year_sector %>% 
+                                          filter(productive_sector == "industrial",
+                                                 iso3_code %in% c(watson_top12_Ind),
+                                                 year == 2015) %>% 
+                                          mutate(iso3_code = fct_relevel(iso3_code, rev(c("CHN", "RUS",  "USA", "PER", "NOR","IDN","JPN" , "IND", "PHL","ESP", "ISL", "CHL")))),
+              aes(x = iso3_code,
+               y = total_catch_gear_t/1000000,
+               fill = GilmanGear8Name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 8))+
+  scale_fill_manual(values = pal_prism)+ ##guide= guide_legend(nrow=2, reverse = TRUE, title.position="top") Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Gear per tons",
+       x= element_blank(),
+       y = expression(Total~tons~(~10^{6})))+
+  theme(legend.position = "right")+
+  guides(fill = guide_legend(reverse = TRUE))
+
+
+
+  ##draw_label("Industrial catch pertitions by gear (2015) for top 12 countries)")
+
+industrial_plot <- wrap_plots(partition_gear_Ind_plot_scale, partition_gear_Ind_plot_catch)+
+  plot_annotation(
+    title = "Industrial catch partitioned by gear (2015) for top 12 countries",
+    theme = theme(plot.title = element_text(size = 18)))
+
+```
+
+2. Non- industiral
+
+```{r}
+##plot 1 scaled values of top 12 countrus for 2015
+
+partition_gear_NI_plot_scale <- ggplot(fraction_gear_year_sector %>% 
+                                          filter(productive_sector == "non_industrial",
+                                                 iso3_code %in% c(watson_top_12_Nonind),
+                                                 year == 2015) %>% 
+                                          mutate(iso3_code = fct_relevel(iso3_code, rev(c("CHN", "IDN", "VNM", "IND", "JPN","USA", "THA", "MEX", "MYS", "PER","KOR", "PHL")))),
+              aes(x = iso3_code,
+               y = gear_fraction_reported,
+               fill = GilmanGear8Name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = pal_prism)+
+   labs(fill = element_text("Gear Type"),
+       title = "Gear fraction",
+       x= "Country",
+       y = element_blank())+
+  theme(legend.position = "none")
+
+##Plot 2 not to scale,
+
+partition_gear_NI_plot_catch <- ggplot(watson_total_gear_year_sector %>% 
+                                          filter(productive_sector == "non_industrial",
+                                                 iso3_code %in% c(watson_top_12_Nonind),
+                                                 year == 2015) %>% 
+                                          mutate(iso3_code = fct_relevel(iso3_code, rev(c("CHN", "IDN", "VNM", "IND", "JPN","USA", "THA", "MEX", "MYS", "PER","KOR", "PHL")))),
+              aes(x = iso3_code,
+               y = total_catch_gear_t/1000000,
+               fill = GilmanGear8Name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  scale_y_continuous(expand = c(0, 0))+  ##
+  scale_fill_manual(values = pal_prism)+
+   labs(fill = element_text("Gear Type"),
+       title = "Gear per tons",
+       x= element_blank(),
+       y = expression(Total~tons~(~10^{6})))+
+  theme(legend.position = "right")+
+  guides(fill = guide_legend(reverse = TRUE))
+
+
+##using patchwork
+non_industrial_plot <- wrap_plots(partition_gear_NI_plot_scale, partition_gear_NI_plot_catch)+
+  plot_annotation(
+    title = "Non-industrial catch partitioned by gear (2015) for top 12 countries",
+    theme = theme(plot.title = element_text(size = 18)))
+```
+
+
+
+##Watson vs Discard partition by gear for top 12 countries.
+
+Data Wrangling
+```{r}
+##Watson
+
+watson_total_gear_year_total <- watson_gear8 %>%
+    group_by(iso3_code, year, GilmanGear8Name) %>%
+    summarise(total_reported_gear = sum(reported, na.rm = T),
+           total_iuu_gear = sum(iuu_total, na.rm = T),
+           total_discards_gear = sum(discards, na.rm = T)) %>%
+    ungroup()
+
+
+watson_fraction_gear_year <- watson_total_gear_year_total %>%
+    group_by(iso3_code , year) %>%
+    mutate(total_reported_year = sum(total_reported_gear, na.rm = T),
+           total_iuu_year = sum(total_iuu_gear, na.rm = T),
+           total_discards_year = sum(total_discards_gear, na.rm = T)) %>%
+    ungroup() %>%
+    mutate(gear_fraction_reported = total_reported_gear/total_reported_year) %>%
+    mutate(gear_fraction_full = (total_reported_gear+total_iuu_gear+total_discards_gear)/(total_reported_year +total_iuu_year + total_discards_year)) %>%
+  mutate_if(is.numeric, round, 5) %>% 
+  select(iso3_code, year, GilmanGear8Name, gear_fraction_reported, gear_fraction_full)
+
+
+
+##Discards
+
+master_gear_discard <- master_gear %>% 
+  distinct(GilmanGear25Code, .keep_all = TRUE)
+
+discard_gear8 <- discards_clean %>%
+  rename(GilmanGear25Code = gear) %>% 
+  left_join(master_gear_discard, by = "GilmanGear25Code")
+
+
+
+discards_total_gear_year <- discard_gear8 %>%
+    group_by(iso3_code, year, GilmanGear8Name) %>%
+    summarise(total_reported_gear_t = sum(landings, na.rm = T),
+           total_discards_gear_t = sum(discards, na.rm = T)) %>% 
+  mutate(total_catch_gear_t = total_reported_gear_t + total_discards_gear_t,
+         productive_sector = "discards_estimates") %>% 
+    ungroup()
+
+
+discard_fraction_gear_year <- discards_total_gear_year %>%
+    group_by(iso3_code , year) %>%
+    mutate(total_reported_year = sum(total_reported_gear, na.rm = T),
+           total_discards_year = sum(total_discards_gear, na.rm = T)) %>%
+    ungroup() %>%
+    mutate(gear_fraction_reported = total_reported_gear/total_reported_year) %>%
+    mutate(gear_fraction_full = (total_reported_gear+total_discards_gear)/(total_reported_year + total_discards_year)) %>%
+  mutate_if(is.numeric, round, 5) %>% 
+  select(iso3_code, year, GilmanGear8Name, gear_fraction_reported, gear_fraction_full)
+
+
+gear_fraction_watson_discard <- rbind(watson_fraction_gear_year, discard_fraction_gear_year)
+
+
+```
+
+
+Plot
+
+```{r}
+partition_gear_watson_discard <- ggplot(gear_fraction_watson_discard %>% 
+             filter(year %in% c(2015, 2018),
+                    iso3_code %in% c(top12_countries)), 
+           aes(x = iso3_code,
+               y = gear_fraction_reported,
+               fill = GilmanGear8Name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  facet_wrap(~year)+
+  scale_fill_manual(values = pal_safe, 
+                    guide= guide_legend(nrow=1, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Watson (2015) and Gilman discards (2018) partition by gear",
+       x= "Country",
+       y = element_blank())+
+  theme(legend.position = "bottom",
+        legend.box = "horizontal")
+```
+
+
+### CHL plots
+
+```{r}
+partition_gear_country <- ggplot(watson_total_gear_year_sector %>% 
+                                   filter(year == 2015,
+                                          iso3_code == "CHL",
+                                          productive_sector == "industrial"))+
+  geom_bar(aes(x = productive_sector,
+               y = total_catch_gear_t/1000000,
+               fill = GilmanGear8Name), 
+           stat = "identity",
+           width = 0.6)+
+  geom_bar(data = discards_total_gear_year %>% 
+                  filter(iso3_code == "CHL"),
+           aes(x = productive_sector,
+               y = total_catch_gear_t/1000000,
+               fill = GilmanGear8Name),
+           stat = "identity",
+           width = 0.6)+
+  theme_classic() +
+  coord_flip()+
+  scale_y_continuous(expand = c(0,0), limits = c(0, 2.5))+
+  scale_x_discrete(labels = c("Gilman's estimates", "Waton's estimates"))+
+  scale_fill_manual(values = pal_prism, 
+                    guide= guide_legend(nrow=1, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Catch partitioned by gear type for CHL-2015",
+       x= element_blank(),
+       y = expression(Total~tons~(~10^{6})))+
+  theme(legend.position = "bottom")
+```
+
+Chile Time series
+
+```{r}
+fao_watson_sector_plot_CL <- ggplot(watson_summary_year_sector %>% 
+                                   filter(year %in% c(2004:2015),
+                                          iso3_code == "CHL"))+
+  geom_bar(aes(x = year, y= tones/1000000, fill = types_all),
+           stat = "identity",
+           width = 0.6)+
+  geom_line(data = fao_by_country %>% 
+              filter(year %in% c(2004:2018),
+                     iso3_code == "CHL"),
+            aes(x = year, y = tons_2), size = 1.5, color="#ca8603")+
+  geom_point(data = fao_by_country %>% 
+               filter(year %in% c(2004:2018),
+                      iso3_code == "CHL"),
+             aes(x = year, y = tons_2), size = 2.5, color="#ca8603")+
+  scale_fill_manual(values = c("#d6c5c5","#c18b8b", "#c1d6dd", "#91a3bd", "#4a4d76", "#1d2247"))+
+  scale_x_continuous(breaks = seq(2004,2018, 1))+
+  scale_y_continuous(expand = c(0, 0))+  ##rmoves white space between x axis and bar
+  theme_classic()+
+  labs(title = paste0( "<b><span style = 'font-size: 14pt'> Comparing ",
+                       "<span style = 'color:#ca8603;'>",
+                       "FAO",
+                       "</span></span></b>",
+                       "<b><span style = 'font-size: 14pt'> and Watson's fisheries data for CHL ",
+                       "</span></span></b>"))+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white"))+
+  labs(fill = "Watson's data",
+       x= "Year",
+       y = expression(Tones~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 12),
+        legend.title = element_text(face = "bold"))
+```
+
+TEst plot to see the difference between the total FAO landings for CHL (fao_by_country_1) and tottal landings excluding isscaap_groups not included in the watson data (fao_by_country)
+
+```{r}
+fao_watson_sector_plot_CL <- ggplot()+
+  geom_line(data = fao_by_country %>% 
+              filter(year %in% c(2004:2018),
+                     iso3_code == "CHL"),
+            aes(x = year, y = tons_2), size = 1, color="#ca8603")+
+  geom_line(data = fao_by_country_1 %>% 
+               filter(year %in% c(2004:2018),
+                      iso3_code == "CHL"),
+             aes(x = year, y = tons_2), size = 1, color="#91a3bd")+
+  scale_x_continuous(breaks = seq(2004,2018, 1))+
+  theme_classic()+
+  labs(title = paste0( "<b><span style = 'font-size: 14pt'> Comparing ",
+                       "<span style = 'color:#ca8603;'>",
+                       "FAO",
+                       "</span></span></b>",
+                       "<b><span style = 'font-size: 14pt'> and Watson's fisheries data for CHL ",
+                       "</span></span></b>"))+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white"))+
+  labs(fill = "Watson's data",
+       x= "Year",
+       y = expression(Tones~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 12),
+        legend.title = element_text(face = "bold"))
+```
+
+## Paper 1 Figure 2
+
+Catch allocation by gear
+
+1. Read data
+```{r}
+
+master_gear_gilman <- read_csv(here::here("master_tables/master_gear_mapping.csv")) %>%
+  select(gear =GilmanGear25Code, GilmanGear25Description, GilmanGear8Code, GilmanGear8Name, GFWCategory) %>% 
+  distinct(gear, .keep_all = TRUE) %>% 
+  filter(!is.na(gear)) %>% 
+  clean_names()
+
+##catch with discard by sector
+catch_sector <- read_csv(here::here("intermediate_data/total_catch_sector.csv")) %>% 
+  left_join(master_gear_gilman, by = "gear")
+
+##CHECK - alternative is to porcess the data directly before plotting
+##totals by country
+# catch_by_gear_country <- catch_w_discard  %>% 
+#   group_by(year, iso3_code, gear) %>% 
+#   summarise(total_catch = sum(catch_w_discard, na.rm = T)) %>%
+#   group_by(year, iso3_code) %>% 
+#   mutate(total_catch_country = sum(total_catch)) %>% 
+#   ungroup() %>% 
+#   mutate(catch_prop = total_catch/total_catch_country) %>% 
+#   arrange(desc(total_catch_country)) %>% 
+#   left_join(master_gear_gilman, by = "gear")
+
+##Top countries to plot
+# top_countries <- catch_by_gear_country %>% 
+#   select(year, iso3_code, total_catch_country) %>% 
+#   distinct() %>% 
+#   top_n(40, total_catch_country) %>% 
+#   select(iso3_code) %>% 
+#   pull()
+
+##Totals by FAO areas
+# catch_by_gear_fao <- catch_w_discard %>% 
+#   group_by(year, fao_area_code, gear) %>% 
+#   summarise(total_catch_gear = sum(catch_w_discard, na.rm = T)) %>%
+#   group_by(year, fao_area_code) %>% 
+#   mutate(total_catch_area = sum(total_catch_gear)) %>% 
+#   ungroup() %>% 
+#   mutate(catch_prop = total_catch_gear/total_catch_area) %>% 
+#   arrange(desc(total_catch_area))
+
+
+
+```
+
+note: modified missing valuies in master_gear
+Boat-operated lift nets -- driftnet
+Stow nets -- set_gilnet
+Barriers, fences, traps, etc. -- pots_and_traps
+
+
+
+2. Color pallet options
+```{r}
+pal_antique <- rev(c("#855C75", "#D9AF6B", "#AF6458", "#736F4C", "#526A83", "#625377", "#68855C", "#9C9C5E", "#A06177", "#8C785D", "#467378", "#7C7C7C"))
+
+
+pal_prism <- rev(c("#5F4690", "#1D6996", "#38A6A5", "#0F8554", "#73AF48", "#EDAD08", "#E17C05", "#CC503E", "#94346E", "#6F4070", "#994E95", "#666666"))
+
+pal_safe <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+pal_pastel <-  rev(c("#66C5CC", "#F6CF71", "#F89C74", "#DCB0F2", "#87C55F", "#9EB9F3", "#FE88B1", "#C9DB74", "#8BE0A4", "#B497E7", "#D3B484", "#B3B3B3"))
+
+pal_vivid <- c("#E58606", "#5D69B1", "#52BCA3", "#99C945", "#CC61B0", "#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#ED645A", "#CC3A8E", "#A5AA99")
+
+gear_cols <- 25
+gear_colors <- colorRampPalette(brewer.pal(8, "Set2"))(gear_cols)
+gear_colors_2 <- colorRampPalette(brewer.pal(12, "Paired"))(gear_cols)
+```
+
+
+3. Plot
+
+Country plot
+```{r}
+
+partition_gear_plot <- catch_by_gear_country %>% 
+  filter(iso3_code %in% top_countries) %>%
+  mutate(iso3_code = fct_reorder(iso3_code, total_catch_country)) %>% ## , .desc = TRUE. set the order of the first variable according to values of the second variable
+  ggplot(aes(x = iso3_code,
+             y = catch_prop,
+             fill = gfw_category))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  facet_wrap(~year)+
+  scale_fill_manual(values = pal_prism, 
+                    guide= guide_legend(nrow =2, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Industrial catch partitioned by gear",
+       x= "Country",
+       y = "Catch proportion")+
+  theme(legend.position = "bottom",
+        legend.box = "horizontal")
+
+plot(partition_gear_plot)
+
+```
+
+FAO area plot
+
+```{r}
+
+
+partition_gear_fao_plot <- catch_by_gear_fao %>% 
+  mutate(fao_area = as.factor(fao_area_code),
+         fao_area = fct_reorder(fao_area, fao_area_code)) %>% ## , .desc = TRUE. set the order of the first variable according to values of the second variable
+  ggplot(aes(x = fao_area,
+             y = catch_prop,
+             fill = gilman_gear8name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  facet_wrap(~year)+
+  scale_fill_manual(values = pal_prism, 
+                    guide= guide_legend(nrow =2, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Industrial catch partitioned by gear",
+       x= "FAO Fishing Area",
+       y = "Catch proportion")+
+  theme(legend.position = "bottom",
+        legend.box = "horizontal")
+
+plot(partition_gear_fao_plot)
+
+```
+
+
+Catch per gear plot
+
+```{r}
+catch_by_gear_plot <- catch_sector %>% 
+  filter(year == 2017,
+         fao_area_code != 18) %>% 
+  mutate(area_grouped = ifelse(fao_area_code %in% c(48, 58, 88), "48, 58, 88",fao_area_code)) %>% 
+  group_by(area_grouped, fisheries_sector, gilman_gear8name) %>% 
+  summarise(total_catch_gear = sum(catch_w_discard, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(area = "Area",
+         fisheries_sector = fct_relevel(fisheries_sector, c("non-industrial", "industrial"))) %>% 
+  unite(fao_area_name, area, area_grouped, sep = " ", remove = FALSE) %>% 
+  ggplot( aes(x = gilman_gear8name, 
+              y = total_catch_gear/1000000,
+              fill = gilman_gear8name))+
+  geom_bar(aes(fill = fisheries_sector),
+           stat = "identity")+
+  scale_y_continuous(expand = c(0, 0))+  ##rmoves white space between x axis and bar
+  coord_flip()+
+  facet_wrap(~fao_area_name) +
+  theme_classic()+
+
+  scale_fill_manual(values = c("#a2b5cd","#6e7b8b"),
+                    guide= guide_legend(nrow=1, reverse = TRUE))+
+  labs(fill = "Productive Sector",
+       x= element_blank(),
+       y = expression(Tonnes~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+  theme(legend.position = "bottom")
+  #theme(axis.text.x = element_text(angle = 90, vjust = 0.1))
+
+plot(catch_by_gear_plot)
+
+
+library(magick)
+library(patchwork)
+library(cowplot)
+
+fao_areas_im <- image_read("https://upload.wikimedia.org/wikipedia/commons/3/3a/FAO_Major_Fishing_Areas.svg") %>% 
+  image_resize("600x900")
+
+fao_areas <- image_ggplot(fao_areas_im)
+
+fao_areas <- ggdraw()+
+  draw_image(fao_areas_im, scale = 0.9)
+
+plot_grid(fao_areas, catch_by_gear_plot, ncol = 1, rel_heights = c(1,2))
+
+plot(fao_areas_im)
+
+fao_areas/catch_by_gear_plot
+
+
+
+
+```
+

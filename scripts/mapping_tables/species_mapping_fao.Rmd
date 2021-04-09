@@ -1,0 +1,114 @@
+---
+title: "Matching FAO Landing Species"
+author: "Camila Vargas"
+date: "6/25/2020"
+output: pdf_document
+---
+
+This script creats the FAO species master table by matching all species in the FAO landing data to their scientific name, 3 alpha codes, ISSCAAP group, ect. This way be able to combine data sets.
+
+
+##Set Up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+source(here::here("R/fao.R"))
+
+##install and load packeges
+load_pak(common_packages)
+
+```
+
+
+
+### Read data
+
+1. FAO Landing data
+
+```{r}
+fao_landings_species <- get_fao_landings() %>% 
+  select(species) %>% 
+  distinct() %>% 
+  mutate_all(tolower) ##Sets everything to lowecase to be able to match with no issues
+```
+
+
+2. FAO Species Name Groups
+
+The FAO data is detaild at a species level. Some groups of species are grouped at a Genus level where they use the word "nei" to clasify "everything else".
+
+We used a file downloaded from the FAO Fish and Aquaculture website (See Metadata Wiki for more information) to connect english common name of species with their corresponging scientific name, taxonomic family and ISSCAAP group.
+
+Note: this data frame contains NAs in different columns
+
+Here we prepared the FAO list of species with different taxonomic groups to match with the list of species in the FAO landing data
+
+```{r}
+fao_species_groups <- read_csv(here::here("data/fao_landings/fao_species_name_groups.csv")) %>% 
+  clean_names() %>% 
+  select("3alpha_code" = x3alpha_code, name_en, scientific_name, family, major_group, isscaap_group) %>% 
+  mutate_all(tolower) %>% ##Sets everything to lowecase
+  separate(scientific_name, into = c("genus", NA), remove = F) %>% ##in case we neet to match just by genus
+  mutate(name_no_nei = ifelse(str_detect(name_en, " nei"), name_en, NA)) %>% 
+  mutate(name_no_nei = str_remove(name_no_nei, " nei")) %>% ## remove the nei to be able to match with more taxon in the watson list
+  mutate(fao_group = "yes") ##to identify witch taxon were match and wich ones were not
+
+```
+
+
+### Match the species group to the landing species
+
+```{r}
+fao_ennames <- fao_landings_species %>% 
+  mutate(name_en = species) %>% 
+  left_join(fao_species_groups, by= "name_en") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "en_name")
+
+enname_list_fao <- fao_ennames %>% 
+  distinct(name_en) %>% 
+  pull(name_en)
+```
+
+Most of the sppecies match with the english name (1799 of 1826). 
+
+The 27 species that did not match will probably match with a scientific name
+
+
+```{r}
+fao_sciname <- fao_landings_species %>% 
+  filter(!species %in% enname_list_fao) %>% ##fiters out all the species that were match in with en_name
+  mutate(scientific_name = species) %>%
+  mutate(scientific_name = ifelse(scientific_name == "lorna drum", "sciaena spp", scientific_name)) %>% 
+  left_join(fao_species_groups, by = "scientific_name") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "sci_name")
+
+
+```
+
+The only species that did not match directly was the specie under the name "lorna drum", according to Fish Base the scientific name of this species is Sciaena deliciosa, therefore we grouped it under the Sciaena spp.
+
+
+### Combine all FAO landing species
+```{r}
+
+all_fao_fao_species <- rbind(fao_ennames, fao_sciname)
+
+#write_csv(all_fao_fao_species, here::here("mapping_tables/master_species_fao_landings.csv"))
+
+```
+
+49 species do not have a family category
+
+All species have a ISSCAPP group
+
+
+There are 314 families in total
+
+There are 44 ISSCAPP groups in total
+
+
+

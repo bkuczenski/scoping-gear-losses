@@ -1,0 +1,150 @@
+---
+title: "Cleaning Gilman datarepository"
+author: "Camila Vargas"
+date: "8/28/2020"
+output: html_document
+---
+
+This script cleans the meta data used to in Pérez-Roda 2019 discards assesment. The raw Excel file was downloaded on August 27, 2020 from:
+
+ 
+ Reference: FAO. Discards Database for Global Marine Fisheries. Available online, http://www.fao.org/fishery/static/TP633/datarepository.xlsm. Food and Agriculture Organization of the United Nations, Rome (2019)
+ 
+The goal is to create a table that matches all FAO species to a specifc fishery in the discards data.
+
+
+## Set up
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+source(here::here("R/discards.R"))
+
+```
+
+
+## Read raw data
+
+```{r}
+
+fishery_table <- read_excel(here::here("data/perez-roda_discards/datarepository.xlsm"), sheet = "FisheryTable") %>% 
+  clean_names() %>% 
+  select(id, country, fishery_name = name, fao_area, ocean, depth, location, target, target_species, vessel_length, gear, fish_stat)
+
+```
+
+Observation: There are 187 more "fisheries" in the metadata (data repository) than in the actual discard database. 
+
+```{r}
+##Comment out to see details
+# discard_estimation <- get_discard_data()
+# 
+# setdiff(fishery_table$fishery_name, discard_estimation$fishery_name)
+```
+
+Note: 1,751 fisheries name do not mention if it is industrial or artisanal. Only 338 do.
+
+
+## Idenfifying Fish Stat IDs
+
+Identifying all the FishStat IDs and it's percentage that go into one fishery.
+
+```{r}
+
+fish_stat_codes <- fishery_table %>% 
+  mutate(fish_stat_vec = str_split(fish_stat, ";")) %>% 
+  unnest(fish_stat_vec) %>% 
+  filter(fish_stat_vec != "") %>% 
+  mutate(position = rep(c("fish_stat_id","pct"), times = n()/2),
+         category = rep(1:(n()/2), each = 2)) %>% 
+  pivot_wider(names_from = position,
+              values_from = fish_stat_vec) %>% 
+  select(-fish_stat, - category) %>% 
+  mutate(fish_stat_id = as.numeric(fish_stat_id),
+         country = case_when(country == "cabo verde" ~ "Cabo Verde",
+                             T ~ country)) %>% 
+  arrange(fish_stat_id)
+
+
+##Check all species sum to 100%
+check_pct <- fish_stat_codes %>% 
+  group_by(fish_stat_id) %>% 
+  mutate(pct = as.numeric(pct)) %>% 
+  summarise(pct_total = sum(pct)) %>% 
+  filter(pct_total < 100)
+
+##stat id 2786 (Artisanal shrimp from El Salvador) sums 10 probably its a typo mistake
+
+
+```
+
+## Reading Fish Stat species
+There are 12,643 **species id** in the Fishery Table and 14,563 **species id** (1,740 species) in the actual Fish Stat (Diference: 1,920)
+
+The Fisheries table does not account for most of the Inland species. There are 1,213 **species id** under an Inland fishing area ("Africa - Inland waters", "America, South - Inland waters", "Former USSR area - Inland waters", "Oceania - Inland waters", "America, North - Inland waters", "Asia - Inland waters", "Europe - Inland waters")
+
+21 of those **species id** are included in the Fisheries classification (are assign a specific fishery). The fishing areas included within these species are: "Africa - Inland waters","America, North - Inland waters" "Oceania - Inland waters", "Asia - Inland waters". However not all the species caught in these areas are included.
+
+1,192 **species id** caugh in inland waters are not classified into a fishery.
+
+**QUESTION:** WHAT HAPPEND TO THE REMAINING SPECIES IN THE CLASSIFICATION? (728 marine species id without fishery classification)
+Answer from Amparo:
+In annex A.1 of the Discards report you will find a full list of FAO areas, countries and taxa that haven’t been included in the study. The reason why these were not included is either because they were out of the scope of the study (FAO areas and taxa) or because we were not able to find enough information regarding gear types used in each of the listed countries for the reported landings.
+
+```{r}
+
+fish_stat <- read_excel(here::here("data/perez-roda_discards/datarepository.xlsm"), sheet = "FishStat") %>% 
+  clean_names() %>% 
+  # mutate(spp_alpha = str_to_lower(spp_alpha),
+  #        area = "Area") %>%
+  # unite(fao_area, area, fishing_area_code, sep = " ") %>% 
+  select(fish_stat_id, country,fishing_area_name,fishing_area_code, spp_common, spp_scientific, spp_alpha, land_2014, land_avg_10_14)
+
+```
+
+## "Query-style" Matching
+Here we think of the Perez-Roda curated database as a query specification, and the FAO data as what we're querying against.  The question is: how much fish can we expect these fisheries to have gotten in 2017/2018, using their 2010-2014 activity as a proxy?
+
+The approach differs from previous attempts, because we already expect the Perez-Roda database to be a subset of the FAO database.  Initially, we started with FAO (via the fish_stat table) and we left-join the Perez-Roda data- we are already thinking about using Perez-Roda to "explain" each FAO entry.
+
+Instead, if we start with fish_stat_codes, being an attribution of catch to fishery, then we can use the FAO data to "elaborate" each Perez-Roda entry.  We do the join in the other direction. And this prevents our misery on FAO area later.
+
+```{r}
+fish_stat_allocated <- fish_stat_codes %>%
+  left_join(fish_stat, by = c("fish_stat_id", "country")) %>%
+  mutate_at(c("spp_common", "spp_alpha"), str_to_lower) %>%
+  filter(!fishing_area_name %in% c("Africa - Inland waters", "America, South - Inland waters", "Former USSR area - Inland waters", "Oceania - Inland waters", "America, North - Inland waters", "Asia - Inland waters", "Europe - Inland waters")) %>%
+  mutate(pct = as.numeric(pct),
+         catch_amount = land_avg_10_14 * pct / 100) %>%
+#         fishing_area_c = as.numeric(str_extract(fao_area, "[[:digit:]]+$"))) # don't need this
+  select( -ocean, -target_species, -spp_scientific)
+
+```
+OK, so that tells us the actual amount of each species caught by each fishery.  But if we are going to allocate 2017-2018 catch to that, we also need to know the share of the FAO country total that represents.  To estimate that, we group the FAO fish_stat data by country and join that in as a denominator.
+
+```{r}
+grouped_fishstat_bk <- fish_stat %>%
+  filter(!fishing_area_name %in% c("Africa - Inland waters", "America, South - Inland waters", "Former USSR area - Inland waters", "Oceania - Inland waters", "America, North - Inland waters", "Asia - Inland waters", "Europe - Inland waters")) %>%
+  group_by(country, spp_alpha, fishing_area_code) %>%
+  summarise(group_catch_2014 = sum(land_2014, na.rm = T),
+            group_catch_avg_10_14 = sum(land_avg_10_14, na.rm = T)) %>%
+  ungroup() %>%
+  mutate(spp_alpha = str_to_lower(spp_alpha))
+
+fish_stat_normed <- fish_stat_allocated %>%
+  left_join(grouped_fishstat_bk, by = (c("country", "spp_alpha", "fishing_area_code"))) %>%
+  mutate(catch_norm = catch_amount / group_catch_avg_10_14,
+         fao_area = case_when(fishing_area_code == 18 ~ "Area 18",
+                              T ~ fao_area)) %>% 
+  rename(fishery_id = id)
+```
+
+This catch_norm amount is the same as pct / 100 for all fisheries that don't have subareas listed on fish_stat--- for those that do, the catch_norm will be smaller than pct- because it will report the fraction of the total species caught in the FAO area, whereas the pct is per subarea (i.e. by fish_stat_id)
+
+Now we save this in intermediate results.  When we want to use this as a query against a new FAO year,
+we join to the FAO data on (country, lower(spp_alpha), fishing_area_code) and multiply the year total by
+
+
+```{r}
+write_csv(fish_stat_normed, here::here("output/fao_fisheries_norm.csv"))
+```

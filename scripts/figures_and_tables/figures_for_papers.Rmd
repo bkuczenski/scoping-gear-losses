@@ -1,0 +1,216 @@
+---
+title: "Creates figues for publications"
+author: "Camila Vargas"
+date: "11/23/2020"
+output: html_document
+---
+
+## Set-up
+
+```{r setup, include=FALSE}
+source(here::here("R/set_up.R"))
+source(here::here("R/fao.R"))
+source(here::here("R/watson.R"))
+source(here::here("R/discards.R"))
+
+##install and load packeges
+load_pak(plotting_pkgs)
+
+```
+
+
+## SciAdv Figure S1
+
+Catch allocation by gear
+
+1. Read data
+```{r}
+
+master_gear_gilman <- read_csv(here::here("master_tables/master_gear_mapping.csv")) %>%
+  select(gear =GilmanGear25Code, GilmanGear25Description, GilmanGear8Code, GilmanGear8Name, GFWCategory) %>% 
+  distinct(gear, .keep_all = TRUE) %>% 
+  filter(!is.na(gear)) %>% 
+  clean_names()
+
+##catch with discard by sector
+#catch_sector <- read_csv(here::here("outputs/total_catch_sector.csv")) %>% 
+#  left_join(master_gear_gilman, by = "gear")
+
+catch_sector <- total_catch_sector
+
+##CHECK - alternative is to porcess the data directly before plotting
+##totals by country
+catch_by_gear_country <- discard_scaleup  %>% 
+   group_by(year, iso3_code, gear) %>% 
+   summarise(total_catch = sum(catch_w_discard, na.rm = T)) %>%
+   group_by(year, iso3_code) %>% 
+   mutate(total_catch_country = sum(total_catch)) %>% 
+   ungroup() %>% 
+   mutate(catch_prop = total_catch/total_catch_country) %>% 
+   arrange(desc(total_catch_country)) %>% 
+   left_join(master_gear_gilman, by = "gear")
+
+##Top countries to plot
+top_countries <- catch_by_gear_country %>% 
+ select(year, iso3_code, total_catch_country) %>% 
+ distinct() %>% 
+ top_n(40, total_catch_country) %>% 
+ select(iso3_code) %>% 
+ pull()
+
+##Totals by FAO areas
+catch_by_gear_fao <- discard_scaleup %>% 
+ group_by(year, fao_area_code, gear) %>% 
+ summarise(total_catch_gear = sum(catch_w_discard, na.rm = T)) %>%
+ group_by(year, fao_area_code) %>% 
+ mutate(total_catch_area = sum(total_catch_gear)) %>% 
+ ungroup() %>% 
+ mutate(catch_prop = total_catch_gear/total_catch_area) %>% 
+ arrange(desc(total_catch_area))
+
+
+
+```
+
+note: modified missing valuies in master_gear
+Boat-operated lift nets -- driftnet
+Stow nets -- set_gilnet
+Barriers, fences, traps, etc. -- pots_and_traps
+
+
+
+2. Color pallet options
+```{r}
+pal_antique <- rev(c("#855C75", "#D9AF6B", "#AF6458", "#736F4C", "#526A83", "#625377", "#68855C", "#9C9C5E", "#A06177", "#8C785D", "#467378", "#7C7C7C"))
+
+
+pal_prism <- rev(c("#5F4690", "#1D6996", "#38A6A5", "#0F8554", "#73AF48", "#EDAD08", "#E17C05", "#CC503E", "#94346E", "#6F4070", "#994E95", "#666666"))
+
+pal_safe <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+pal_pastel <-  rev(c("#66C5CC", "#F6CF71", "#F89C74", "#DCB0F2", "#87C55F", "#9EB9F3", "#FE88B1", "#C9DB74", "#8BE0A4", "#B497E7", "#D3B484", "#B3B3B3"))
+
+pal_vivid <- c("#E58606", "#5D69B1", "#52BCA3", "#99C945", "#CC61B0", "#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#ED645A", "#CC3A8E", "#A5AA99")
+
+gear_cols <- 25
+gear_colors <- colorRampPalette(brewer.pal(8, "Set2"))(gear_cols)
+gear_colors_2 <- colorRampPalette(brewer.pal(12, "Paired"))(gear_cols)
+```
+
+
+3. Plot
+
+Country plot
+```{r}
+
+partition_gear_plot <- catch_by_gear_country %>% 
+  filter(iso3_code %in% top_countries) %>%
+  mutate(iso3_code = fct_reorder(iso3_code, total_catch_country)) %>% ## , .desc = TRUE. set the order of the first variable according to values of the second variable
+  ggplot(aes(x = iso3_code,
+             y = catch_prop,
+             fill = gfw_category))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  facet_wrap(~year)+
+  scale_fill_manual(values = pal_prism, 
+                    guide= guide_legend(nrow =2, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Industrial catch partitioned by gear",
+       x= "Country",
+       y = "Catch proportion")+
+  theme(legend.position = "bottom",
+        legend.box = "horizontal")
+
+plot(partition_gear_plot)
+
+```
+
+FAO area plot
+
+```{r}
+
+
+partition_gear_fao_plot <- catch_by_gear_fao %>% 
+  left_join(master_gear_gilman, by="gear") %>%
+  mutate(fao_area = as.factor(fao_area_code),
+         fao_area = fct_reorder(fao_area, fao_area_code)) %>% ## , .desc = TRUE. set the order of the first variable according to values of the second variable
+  ggplot(aes(x = fao_area,
+             y = catch_prop,
+             fill = gilman_gear8name))+
+  geom_bar(stat = "identity")+
+  theme_classic() +
+  coord_flip()+
+  facet_wrap(~year)+
+  scale_fill_manual(values = pal_prism, 
+                    guide= guide_legend(nrow =2, reverse = TRUE, title.position="top"))+ ##Guide tells nrows or ncol for the legend
+   labs(fill = element_text("Gear Type"),
+       title = "Industrial catch partitioned by gear",
+       x= "FAO Fishing Area",
+       y = "Catch proportion")+
+  theme(legend.position = "bottom",
+        legend.box = "horizontal")
+
+plot(partition_gear_fao_plot)
+
+```
+
+
+Catch per gear plot
+
+```{r}
+catch_by_gear_plot <- catch_sector %>% 
+  left_join(master_gear_gilman, by="gear") %>%
+  filter(year == 2018,
+         fao_area_code != 18) %>% 
+  mutate(area_grouped = ifelse(fao_area_code %in% c(48, 58, 88), "48, 58, 88",fao_area_code)) %>% 
+  group_by(area_grouped, fisheries_sector, gilman_gear8name) %>% 
+  summarise(total_catch_gear = sum(catch_w_discard, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(area = "Area",
+         fisheries_sector = fct_relevel(fisheries_sector, c("non-industrial", "industrial"))) %>% 
+  unite(fao_area_name, area, area_grouped, sep = " ", remove = FALSE) %>% 
+  ggplot( aes(x = gilman_gear8name, 
+              y = total_catch_gear/1000000,
+              fill = gilman_gear8name))+
+  geom_bar(aes(fill = fisheries_sector),
+           stat = "identity")+
+  scale_y_continuous(expand = c(0, 0))+  ##rmoves white space between x axis and bar
+  coord_flip()+
+  facet_wrap(~fao_area_name) +
+  theme_classic()+
+
+  scale_fill_manual(values = c("#a2b5cd","#6e7b8b"),
+                    guide= guide_legend(nrow=1, reverse = TRUE))+
+  labs(fill = "Productive Sector",
+       x= element_blank(),
+       y = expression(Tonnes~(~10^{6})))+ ##what ever is in {} is a superscripts (for subscripts use[])
+  theme(legend.position = "bottom")
+  #theme(axis.text.x = element_text(angle = 90, vjust = 0.1))
+
+plot(catch_by_gear_plot)
+
+
+library(magick)
+library(patchwork)
+library(cowplot)
+
+fao_areas_im <- image_read("https://upload.wikimedia.org/wikipedia/commons/3/3a/FAO_Major_Fishing_Areas.svg") %>% 
+  image_resize("600x900")
+
+fao_areas <- image_ggplot(fao_areas_im)
+
+fao_areas <- ggdraw()+
+  draw_image(fao_areas_im, scale = 0.9)
+
+plot_grid(fao_areas, catch_by_gear_plot, ncol = 1, rel_heights = c(1,2.4)) #resize to area 800x1000 save to output/figures/figure1_catch_by_sector_area.eps
+
+plot(fao_areas_im)
+
+fao_areas/catch_by_gear_plot
+
+
+
+
+```
+

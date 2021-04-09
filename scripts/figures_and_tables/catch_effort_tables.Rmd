@@ -1,0 +1,41 @@
+---
+title: "catch_effort_tables.Rmd"
+author: "Brandon Kuczenski"
+date: "1/22/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Catch characterization
+
+from match_catch_effort_gilman import fao_fisheries...
+
+
+```{r }
+
+fao_f_18 <- fao_fisheries %>% filter(year == "2018")
+
+master_gear <- read_csv(here::here("mapping_tables/master_gear_mapping.csv"))
+
+mg_gilman_gfw <- master_gear %>% select(GilmanGear25Code, GFWCategory)
+
+tt <- fao_f_18 %>% 
+  group_by(gear) %>% 
+  summarise(gear_catch = sum(catch_fishery_area_spc)) %>% 
+  left_join(mg_gilman_gfw, by=c("gear" = "GilmanGear25Code")) %>%
+  arrange(-gear_catch)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

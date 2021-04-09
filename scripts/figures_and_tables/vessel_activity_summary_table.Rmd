@@ -1,0 +1,49 @@
+---
+title: "GFW  Vessel Activity Summary"
+author: "Camila Vargas"
+date: "11/20/2020"
+output: html_document
+---
+
+## Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+
+```
+
+## Data
+```{r}
+catch_effort_data <- read_csv(here::here("output/catch_effort_long.csv"))
+```
+
+
+## Summary Table
+Total fishing hours, total kw * h, total LOA * h, total GT*h (by year?) for each gear type
+
+```{r}
+
+vessel_activity_summary <- catch_effort_data %>% 
+  pivot_wider(id_cols = c(year, iso3_code, fao_area_code, GFWCategory, total_catch_gfw_cat, total_f_hours,total_hours, total_days, n_vessel),
+              names_from = effort_type,
+              values_from = c(effort, slope, slope_log, effort_moment)) %>% 
+  group_by(year, GFWCategory) %>% 
+  summarise(total_fishing_hours = sum(total_f_hours, na.rm = TRUE),
+            total_kw = sum(effort_total_f_hours_kw, na.rm = TRUE),
+            total_LOA = sum(effort_total_f_hours_length, na.rm = TRUE),
+            total_gt = sum(effort_total_f_hours_tonnage, na.rm = TRUE))
+
+
+```
+
+
+## Seve table
+```{r}
+write_csv(vessel_activity_summary, here::here("output/vessel_activity_summary.csv"))
+```
+

@@ -1,0 +1,104 @@
+---
+title: "Matching Discard Species Group"
+author: "Camila Vargas"
+date: "7/8/2020"
+output: pdf_document
+---
+
+This script create a file that combines the species group in the discrds database with the ISSCAAP groups.
+
+
+```{r setup, include=FALSE}
+
+source(here::here("R/set_up.R"))
+source(here::here("R/discards.R"))
+
+##install and load packeges
+load_pak(common_packages)
+
+load_pak(additional_pkgs)
+
+```
+
+
+##Create a table with all issapcc names and codes
+
+Scrape from the internet
+
+```{r}
+table_url <- "http://www.fao.org/tempref/FI/DOCUMENT/cwp/handbook/annex/AnnexS2listISSCAAP2000.pdf"
+
+
+read_pdf_table <- pdf_text(table_url)
+
+isscaap_df <- data.frame(text = read_pdf_table) %>% 
+  mutate(text_sep = str_split(text, "\\n")) %>% ##devided the text in a vector (group of text) each vector in a row.
+  unnest(text_sep) ## Separated vector into rows.
+  
+  
+isscaap_table <- isscaap_df %>% 
+  select(-text) %>% 
+  mutate(isscaap_main_code = str_extract(text_sep, "[0-9]")) %>% 
+  mutate(isscaap_group = str_extract(text_sep, "(?=[A-Z]).+")) %>% 
+  mutate(isscaap_code = str_extract(text_sep, "(\\d)+")) %>% 
+  filter(!is.na(isscaap_code),
+         isscaap_code != "2000") %>% 
+  select(isscaap_main_code, isscaap_code, isscaap_group)
+
+
+
+isscaap_main_groups <- isscaap_table %>% 
+  filter(isscaap_code==isscaap_main_code) %>% 
+  rename(isscaap_main = isscaap_group) %>% 
+  select(-isscaap_code)
+
+
+table_isscaap_groups <- isscaap_table %>%
+  left_join(isscaap_main_groups, by="isscaap_main_code") %>% 
+  filter(isscaap_main_code != isscaap_code) %>% 
+  mutate(isscaap_group = str_to_lower(isscaap_group))
+  
+```
+
+##Add demersal groups to isscap table
+
+There are 7 groups in the discard data base define as:
+
+- tuna: tunas, bonitos and billfish (ISSCAAP group 36)
+- demersal fish: all demersal fish including reef associated fish and the majority of coastal fish
+- pelagic fish: all pelagic fish but tunas, bonitos and billfish
+- crustaceans: all crustaceans (ISSCAAP groups from 41 to 47)
+- shellfish: all molluscs (excluding cephalopods) (ISSCAAP groups 51, 52, 53, 54, 55, 56 and 58)
+- cephalopods: all cephalopods (ISSCAAP group 57)
+- other: can include a mix of 2 (or more) different categories
+
+*According to (Third Assesment of global marine fisheries discards )[http://www.fao.org/3/CA2905EN/ca2905en.pdf] pg 40
+
+```{r}
+discard_species_group <- get_discard_data() %>% 
+  distinct(species_group)
+```
+
+
+Adding discard groups to isscaap table according to our best criteria
+
+```{r}
+discard_to_isscaap <- table_isscaap_groups %>% 
+  mutate(discard_species_group = case_when(isscaap_code == "36"~ "tuna",
+                                           isscaap_main_code == "4"~ "crustaceans",
+                                           isscaap_code == "57" ~ "cephalopods",
+                                           isscaap_code %in% c("51","52", "53", "54", "55","56", "58")~ "shellfish",
+                                           isscaap_code %in% c("21","22", "31", "34", "38")~ "demersal fish",
+                                           isscaap_code %in% c("23","24", "25", "32", "33","35","37","39")~ "pelargic fish",
+                                           isscaap_main_code %in% c("7", "8", "9") ~ "other"))
+```
+
+
+TO define which  groups are pelargic and which are demersal we used information from Fish Base
+**Check with Eric
+
+##Save final table
+```{r}
+##write_csv(discard_to_isscaap, here::here("mapping_tables/master_species_discard_groups.csv"))
+```
+

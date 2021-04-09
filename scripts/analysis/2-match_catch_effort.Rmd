@@ -1,0 +1,516 @@
+---
+title: "Matching catch and effort with Perez Roda logical fishery groups"
+author: "Camila Vargas"
+date: "8/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+source(here::here("R/fao.R"))
+
+source(here::here("R/discards.R"))
+
+
+```
+
+
+## Read and preparing data for analysis
+
+Note: Gibraltar has 1 ton landing each year but is  not within the fisheries mapping. GWF has "fishing" data for aprox 10 day a year.
+Monaco, Netherlands Antilles and Sudan (former) are in the fisheries mapping and not in FAO landings, but species do not have any fishery assign.
+
+```{r, echo=FALSE}
+
+##Countries' name map
+master_countries <- read_csv(here::here("mapping_tables/master_countries.csv"))
+
+####FAO landing data. 
+fao_17_18 <- get_fao_landings() %>% 
+  fao_all_names() %>%
+  select(fao_landing_c_name,year, species, fao_area_code, landings, iso3_code, spp_alpha = "3alpha_code") %>%
+  mutate_at("landings", replace_na, 0) %>% 
+  filter(landings != 0,
+         year %in% c(2017, 2018)) %>% 
+  group_by(year, fao_landing_c_name, iso3_code, fao_area_code, spp_alpha) %>% 
+  summarise(landings_spc_area = sum(landings)) %>% 
+  ungroup() %>% 
+  mutate(fao_land_id = 1:n())
+  
+##Fao fisheries mapping 
+fisheries_norm <- read_csv(here::here("output/fao_fisheries_norm.csv")) %>% 
+  mutate(country = case_when(country == "Cote d'Ivoire" ~ "Côte d'Ivoire",
+                            country == "Curacao" ~ "Curaçao",
+                            country == "Fiji, Republic of" ~ "Fiji",
+                            country == "Palestine, Occupied Tr." ~ "Palestine",
+                              T ~ country)) %>% 
+  select(fao_landing_c_name = country, spp_alpha, fao_area_code = fishing_area_code, fishery_name,fishery_id, gear, depth, location, vessel_length, catch_norm)
+
+##test: catch_norm =1 
+# test_catch_norm <- fisheries_norm %>%
+#   group_by(fao_landing_c_name, spp_alpha, fao_area_code) %>%
+#   summarise(total_catch_norm = sum(catch_norm)) %>%
+#   filter(total_catch_norm > 1.01 | total_catch_norm < 0.999) ##grouped by country, species, area, all pass the test!
+
+##countries and territories that are out of the Gilman's data scope - there are 28 countires/territories that are not included in the Gilman / Perez Roda database 
+setdiff(fao_17_18$fao_landing_c_name, fisheries_norm$fao_landing_c_name)
+
+
+## Discards data
+discard_data <- get_discard_data() %>% 
+  discards_all_names() %>% 
+    mutate(scaleup_fac = total_catch/landings)
+
+##Note: There are cases that the same fishery is twice for one country (see for example Italy	Adriatic bottom trawls	OTB). This means there are two observations for this fishery they have different landings and apparently different management Type. To solve this issue we are going to be joining and identifying each fishery by the fishery id.
+
+## Fishery info: vesel length, fao area, loction of fishery
+fisheries_info <- fisheries_norm %>%
+  select(-catch_norm,-spp_alpha) %>%
+  distinct() %>%
+  left_join(master_countries, by = "fao_landing_c_name") %>% 
+  mutate(
+    productive_sector = case_when(
+      str_detect(fishery_name, "Industrial") ~ "industrial",
+      str_detect(fishery_name, "Artisanal") ~ "small_scale",
+      str_detect(fishery_name, "industrial") ~ "industrial",
+      str_detect(fishery_name, "artisanal") ~ "small_scale",
+      T ~ "none")) %>% 
+  mutate_at(c("location", "vessel_length"), replace_na, "none") %>%
+  mutate(fisheries_sector = case_when(
+    productive_sector == "small_scale" ~ "non-industrial",
+    vessel_length %in% c("<10 m", "<10m") & productive_sector == "none" ~ "non-industrial",
+    location == "Inshore" & productive_sector == "none" ~ "non-industrial",
+    vessel_length == "No Vessels" ~ "non-industrial",
+    vessel_length %in% c("10-24 m", "10 - 24 m", "10- 24 m") & productive_sector == "none" & location =="none" ~ "non-industrial",
+    gear == "MIS" ~ "non-industrial",
+    TRUE ~ "industrial"))
+
+##Load Gear master table
+master_gear <- read_csv(here::here("mapping_tables/master_gear_mapping.csv"))
+
+
+##Discard Gear to GFW categories
+master_gear_discard <- master_gear %>% 
+  distinct(GilmanGear25Code, .keep_all = TRUE) %>% ##note: keep all variables in data. If a combination is not distinct, this keeps the first row of values.
+  select(gear = GilmanGear25Code,GilmanGear25Description, GFWClass, GFWCategory)
+
+master_gear_gilman <- master_gear %>%
+  select(gear =GilmanGear25Code, GilmanGear25Description, GilmanGear8Code, GilmanGear8Name, GFWCategory) %>% 
+  distinct(gear, .keep_all = TRUE) %>% 
+  filter(!is.na(gear)) %>% 
+  clean_names()
+
+
+```
+
+
+## Matching FAO landings with fishery map
+
+Match with inner_join, this means only data recods that are the same in both data sets will match (same country, species and area).
+
+Then we calculate the total landing for 2017 and 2018 per country, species and fishery
+
+
+Note: The FAO area allocation between the two data sat is a little different. We have to look into that closer. See example Bermuda FishStat only has landings for area 31 but fistat_codes have information for fao area 21 and 31.
+```{r}
+
+fao_fisheries <-  fao_17_18 %>% 
+  inner_join(fisheries_norm, by = c("fao_landing_c_name", "fao_area_code", "spp_alpha")) %>% 
+  mutate(catch_fishery_area_spc = landings_spc_area*catch_norm)
+
+##there are 87 Fisheries that did not have a mutual match
+no_landing_fisheries <- setdiff(fisheries_norm$fishery_name, fao_fisheries$fishery_name)
+
+
+```
+
+
+There are certian species that are not considered in the Gilman fisheries classification. 
+For further invastigation:
+- Rationale behind leaving some species out? - Yes see FAO Discard report for details in Annex A1.
+- Somehow identify how much of these species are industrial catch? If all is artisanal/small-scale then its not a problem when matching catch to effort - probably most of them are inland waters or small-scale.
+
+- Calculate % of catch per country - see below fao_total_country
+## Test: How much of FAO catch is mapped to Gilman fisheries?
+
+```{r}
+id_with_fishery <- fao_fisheries %>%
+  distinct(fao_land_id) %>%
+  pull()
+
+id_no_fishery <- fao_17_18 %>% 
+  filter(!fao_land_id %in% id_with_fishery)
+
+
+##how much of FAO catch is mapped to Gilman fisheries?
+catch_coverage_metric <- fao_17_18 %>% 
+  mutate(fishery_map = ifelse(fao_land_id %in% id_with_fishery, "yes", "no")) %>%
+  group_by(year, fishery_map) %>% 
+  summarise(total_land = sum(landings_spc_area)) %>% 
+  group_by(year) %>% 
+  mutate(total_land_yr = sum(total_land)) %>% 
+  ungroup() %>% 
+  mutate(catch_cov_pct = (total_land/total_land_yr)*100)
+  
+
+```
+
+
+```{r}
+
+##Test catch sum to 1. 
+
+allocation_test <- fao_fisheries %>%
+  group_by(fao_land_id) %>%
+  summarise(total_allocation = sum(catch_norm)) %>%
+  filter(total_allocation < 0.99999 | total_allocation > 1.01) ## All pass the test
+
+```
+
+
+## Test: Comparing total landings from original data and from joint data frame
+
+- Reasoning: total by country - year calculated from fao_clean should be the same than total country year calculated from fao_fishery.
+- If there is a difference it would mean we are double accounting or under accounting for some countries and the reason this can happen is becasue the match between the two data set is not correct.
+
+```{r}
+
+##Calculating total of country per year from fao_clean of all the species that have been assigned to a fishery
+fao_total_w_fishery <- fao_17_18 %>%
+  filter(fao_land_id %in% id_with_fishery) %>% ## this are all the fao observations that have been assign a fishery.
+  group_by(year, iso3_code) %>%
+  summarise(total_catch_fishery_fao = sum(landings_spc_area)) %>% 
+  ungroup()
+
+##Calulating totlas country-year for all species in the catch_by_fishery
+total_catch_by_fishery <- fao_fisheries %>%
+  group_by(year, iso3_code) %>%
+  summarise(total_catch_match_map = sum(catch_fishery_area_spc)) %>% 
+  ungroup()
+
+
+##calculating the total landings per country-year to estimate percentage of landing per country that has been assing a fishery and then comparing numbers from the two data frames above
+test_fao_totals_country <- fao_17_18 %>%
+  group_by(year, iso3_code) %>%
+  summarise(total_catch = sum(landings_spc_area)) %>%
+  left_join(fao_total_w_fishery, by = c("year", "iso3_code")) %>%
+  mutate_if(is.numeric, replace_na, 0) %>%
+  mutate(fishery_pct = (total_catch_fishery_fao/total_catch)*100) %>%
+  left_join(total_catch_by_fishery, by = c("year", "iso3_code")) %>%
+  mutate_if(is.numeric, replace_na, 0) %>%
+  mutate(fishery_dif =  total_catch_match_map - total_catch_fishery_fao) %>% ## If fisheries mapping was done correctly difference should be 0
+  arrange(desc(fishery_dif))
+
+##All countries pass the test
+
+
+```
+
+
+## Scale up by discards
+To sacale up by the discard factor we have to calculate total catch by fishery. This mean sum all the catch of each species that belongs to the same fishery.
+
+```{r}
+
+##sum all species in each fishery by country
+total_catch_fishery <- fao_fisheries %>% 
+  group_by(year,iso3_code, fishery_id, fishery_name, gear, fao_area_code) %>% 
+  summarize(total_catch_fishery = sum(catch_fishery_area_spc)) %>% 
+  ungroup()
+
+##Fisheries that are not in the discard data (160) - We asume these fisheries do not have discards
+setdiff(total_catch_fishery$fishery_name, discard_data$fishery_name)
+
+##Sacale up by discard scalaup factor. 
+discard_scaleup <- total_catch_fishery %>% 
+  left_join(discard_data, by = c("iso3_code", "fishery_id", "fishery_name", "gear")) %>% 
+  mutate_at("scaleup_fac", replace_na, 1) %>% ## all fisheries not considered in the discard data are assume to have have no discards
+  mutate(catch_w_discard = total_catch_fishery*scaleup_fac) %>% 
+  select(year, iso3_code, fishery_name, fishery_id, fao_area_code, gear, total_catch_fishery, catch_w_discard) %>% 
+  mutate(scaleup_id = 1:n())
+  
+
+# ##Test: Discard per year are about 12%?
+# years <- c(2017, 2018)
+# fao_total_landing <- c(82347320, 85376219)
+##total_land_fishery per year has to be less than total_fao_landing (above) becasue we are only scaling up a % of the total landing. Some species were excluded when mapping into fishery.
+
+test_discard <- discard_scaleup %>%
+  group_by(year) %>%
+  summarise(total_w_discard_yr = sum(catch_w_discard),
+            total_land_fishery = sum(total_catch_fishery)) %>%
+  mutate(pct = ((total_w_discard_yr - total_land_fishery)/total_land_fishery)*100) ## Discard pct is ~12%!! yeepee!
+
+```
+
+
+## Identify Industrial fisheries
+We determine all industrial and non-industrial fisheries in the fisheries_info data frame. Based mainly on Fiheries name and vessel length. All miscelanous gear where classified as non-industrial
+
+```{r}
+
+## According to Watson data ~64% of the total annual catch on 2015 is industrial and ~36% is non- industrial
+total_catch_sector <-  discard_scaleup %>% 
+  left_join(fisheries_info, by = c("iso3_code", "fishery_name", "fao_area_code", "fishery_id", "gear")) %>%
+  left_join(master_gear_discard, by = "gear")
+
+
+## test: How much of the total annual catch we are assigning as industrial?
+test_pct_sector <- total_catch_sector %>%
+  group_by(year, fisheries_sector) %>%
+  summarise(total_total = sum(catch_w_discard)) %>% 
+  group_by(year) %>% 
+  mutate(total_year = sum(total_total),
+         pct = (total_total/total_year)*100)
+##Note that these percetanges are only ove the landings that match with on of the fisheries. 
+
+industrial_fisheries <- total_catch_sector %>% 
+  filter(fisheries_sector == "industrial")
+
+
+# write_csv(total_catch_sector, here::here("output/total_catch_gear_sector.csv"))
+
+```
+
+
+
+
+## Match gear to GFW vessel class
+
+```{r}
+
+industrial_catch_gfw_cat <- industrial_fisheries  %>% 
+  group_by(year, iso3_code, fao_area_code, GFWCategory) %>% 
+  summarise( total_catch_gfw_cat = sum(catch_w_discard),
+             total_catch_fishery = sum(total_catch_fishery)) %>% 
+  ungroup()
+
+
+
+##TEST with out filtering for industrial fisheries
+# catch_gfw_cat <- discard_scaleup %>% 
+#   left_join(master_gear_discard, by = "gear") %>% 
+#   group_by(year, iso3_code, fao_area_code, GFWCategory) %>% 
+#   summarise( total_catch_gfw_cat = sum(catch_w_discard))
+
+##csv that contains info of which fishery goes to each GFW gear category
+# write_csv(ind_fisheries_in_gfw_cat, here::here("output/fisheries_in_gfw_cat.csv"))
+```
+
+### Tuna Catch
+
+```{r, echo=FALSE}
+tuna_ps_ind <- fao_fisheries %>%
+  left_join(fisheries_info, by = c("iso3_code", "fishery_name", "fao_area_code", "fishery_id", "gear")) %>%
+  left_join(master_gear_discard) %>% 
+  filter(spp_alpha %in% tuna_spc, GFWCategory == 'seiners', fisheries_sector=='industrial') %>% 
+  group_by(year, iso3_code, fao_area_code, fisheries_sector, GFWCategory) %>% 
+  summarise(tuna_catch = sum(catch_fishery_area_spc)) %>% ungroup()
+
+write_csv(tuna_ps_ind, here::here("output/tuna_purse_seine_ind.csv"))
+
+
+#tuna_all_ind <- fao_fisheries %>%
+#  left_join(fisheries_info, by = c("iso3_code", "fishery_name", "fao_area_code", "fishery_id", "gear")) %>%
+#  left_join(master_gear_discard) %>% 
+#  filter(spp_alpha %in% tuna_spc) %>% 
+#  group_by(year, iso3_code, fao_area_code, fisheries_sector, GFWCategory) %>% 
+#  summarise(tuna_catch = sum(catch_fishery_area_spc)) %>% ungroup()
+
+```
+
+
+# Effort estimates
+
+```{r, echo=FALSE}
+
+
+
+effort_bins <- read_csv(here::here('data/gfw/gfw_effort_bins.csv'))
+
+```
+
+
+## Matching catch and effort
+
+```{r, echo=FALSE}
+
+catch_effort_ind <- industrial_catch_gfw_cat %>% 
+  full_join(effort_bins, by = c("year", "iso3_code", "fao_area_code", "GFWCategory"))
+
+write_csv(catch_effort_ind, here::here("output/catch_effort_ind.csv"))
+
+##test matching all and no filtered by industrial
+# catch_effot <- catch_gfw_cat %>% 
+#   full_join(effort_bins, by = c("year", "iso3_code", "fao_area_code", "GFWCategory"))
+
+```
+
+Catch with no effort
+
+```{r, echo=FALSE}
+catch_no_effort <- catch_effort_ind %>%
+  mutate(effort_value = case_when(is.na(total_f_hours_length) ~ "no",
+                                 T ~ "yes")) %>%
+  group_by(year, effort_value) %>%
+  summarise(total_catch = sum(total_catch_gfw_cat, na.rm = T)) %>%
+  group_by(year) %>%
+  mutate(total_year = sum(total_catch),
+         pct = (total_catch/total_year)*100)
+
+```
+
+
+Effort no catch
+
+
+```{r, echo=FALSE}
+effort_no_catch <- catch_effort_ind %>%
+  mutate(catch_value = case_when(is.na(total_catch_gfw_cat) ~ "no",
+                                 T ~ "yes")) %>%
+  group_by(year, catch_value) %>%
+  summarise(total_effort = sum(total_f_hours_kw, na.rm = T)) %>%
+  group_by(year) %>%
+  mutate(total_year = sum(total_effort),
+         pct = (total_effort/total_year)*100) %>%
+  ungroup()
+```
+
+
+## Data to plot
+
+```{r, echo=FALSE}
+catch_effort_long <- catch_effort_ind %>% 
+  pivot_longer(cols = c(total_f_hours_length, total_f_hours_tonnage, total_f_hours_kw),
+               names_to = "effort_type",
+               values_to = "effort") %>% 
+  filter(!is.na(GFWCategory),
+         !is.na(total_catch_gfw_cat)) %>% 
+  mutate(slope = effort/total_catch_gfw_cat,
+         slope_log = log10(effort/total_catch_gfw_cat),
+         effort_moment = effort/total_f_hours) %>% 
+  ungroup()
+
+write_csv(catch_effort_long, here::here("output/catch_effort_long.csv"))
+
+```
+
+
+
+### Results Paper - Table 1 MFA Results
+
+Here we want to gather up information from each step of the process and group it 
+together into a single table.  I came up with one loopy way to do this in tidy, 
+but there are surely better ways.
+
+Columns: years 2017, 2018
+
+Rows to include:
+ - total FAO catch (from fao_17_18)
+ - Perez Roda catch +
+ - Perez Roda capture (catch + discard adjusted) +
+ - industrial fraction + from total_catch_sector
+ - industrial catch by GFW Category
+ - total (Perez Roda) catch by GFW category for set_gillnets, pots_and_traps????
+
+```{r, echo=FALSE}
+summ_fao <- fao_17_18 %>% group_by(year) %>% summarise(fao_catch = sum(landings_spc_area)) %>% ungroup()
+
+summ_match <- total_catch_sector %>% group_by(year) %>% 
+  summarise(pr_catch = sum(total_catch_fishery), pr_capture = sum(catch_w_discard)) %>%
+  ungroup()
+  
+summ_tuna <- tuna_ps_ind %>% group_by(year) %>% summarise(tuna_ps = sum(tuna_catch))
+
+summ_sector <- total_catch_sector %>% group_by(year, fisheries_sector) %>% 
+  summarise(pr_catch = sum(total_catch_fishery), pr_capture = sum(catch_w_discard)) %>% ungroup() %>% 
+  pivot_wider(names_from=fisheries_sector, values_from=c(pr_catch, pr_capture))
+  
+summ_gear <- total_catch_sector %>% filter(fisheries_sector == 'industrial', 
+                                           GFWCategory %in% table_gfw_categories) %>% 
+  group_by(GFWCategory, year) %>% 
+  summarise(catch_gear = sum(catch_w_discard)) %>% 
+  ungroup() %>%
+  arrange(-catch_gear)
+
+
+#summ_proxy <- total_catch_sector %>% filter(GFWCategory %in% c('set_gillnets', 'pots_and_traps', 'driftnets')) %>%
+#  group_by(GFWCategory, year) %>%
+#  summarise(catch_proxy = sum(catch_w_discard)) %>% 
+#  ungroup() %>%
+#  arrange(-catch_proxy) %>%
+#  pivot_wider(names_from=GFWCategory, values_from=catch_proxy)
+
+total_summ <- summ_fao %>% 
+  left_join(summ_match, by="year") %>%
+  left_join(summ_sector, by="year") %>%
+  left_join(summ_gear %>% pivot_wider(names_from=GFWCategory, values_from=catch_gear), by="year") %>%
+  left_join(summ_tuna, by="year") %>%
+#  left_join(summ_proxy, by="year") %>%
+  column_to_rownames("year") %>% t 
+
+total_summ %>% as_tibble(rownames="Observation") %>% 
+  write_csv(here::here("output/results_catch_flows.csv"))
+  
+
+
+```
+
+
+### Effort Summary
+
+Note: `vessel_char` can only be computed with the GFW dataset.
+
+```{r}
+
+table_gfw_categories <- c('seiners', 'trawlers', 'drifting_longlines', 'set_gillnets', 'pots_and_traps', 'driftnets')
+
+effort_summary <- effort_bins %>% filter(GFWCategory %in% table_gfw_categories) %>% 
+  group_by(year, GFWCategory) %>% 
+  summarise(fishing_hours = sum(total_f_hours),
+            LOA_hours = sum(total_f_hours_length),
+            GT_hours = sum(total_f_hours_tonnage),
+            kw_hours = sum(total_f_hours_kw),
+            vessels = sum(n_vessel)) %>% ungroup() %>% arrange(year, -fishing_hours)
+
+# unique_vessels <- vessel_char %>% group_by(year) %>% summarise(unique_vessels = n())  
+
+
+
+
+effort_summary_yr <- effort_bins %>% 
+  group_by(year) %>% 
+  summarise(vessels_obs = sum(n_vessel),
+            total_hours = sum(total_hours),
+            fishing_hours = sum(total_f_hours),
+            LOA_hours = sum(total_f_hours_length),
+            GT_hours = sum(total_f_hours_tonnage),
+            kw_hours = sum(total_f_hours_kw),
+            ) %>% ungroup() %>% 
+#  left_join(unique_vessels, by="year") %>%
+  arrange(year, -fishing_hours) %>% column_to_rownames("year") %>% t %>%
+  as_tibble(rownames="Observations")
+
+write_csv(effort_summary_yr, here::here("output/results_effort_flows.csv"))
+  
+
+catch_effort_match_summary <- catch_effort_ind %>% 
+  filter(!is.na(total_catch_gfw_cat), !is.na(total_f_hours), GFWCategory %in% c("seiners", "trawlers", "drifting_longlines")) %>%
+  left_join(effort_summary, by=c('year', 'GFWCategory')) %>%
+  left_join(summ_gear, by=c('year', 'GFWCategory')) %>%
+  group_by(year, GFWCategory) %>% 
+  summarise(vessels_obs = sum(n_vessel),
+            f_hours_year = sum(total_f_hours) / sum(n_vessel),
+            capture = sum(total_catch_gfw_cat),
+            capture_pct = 100*sum(total_catch_gfw_cat / catch_gear),
+            LOA_hours_pct = 100*sum(total_f_hours_length / LOA_hours),
+            GT_hours_pct = 100*sum(total_f_hours_tonnage / GT_hours),
+            kw_hours_pct = 100*sum(total_f_hours_kw / kw_hours)
+            ) %>% ungroup() %>% arrange(year, -capture)
+
+write_csv(catch_effort_match_summary, here::here("output/results_catch_effort.csv"))
+
+```

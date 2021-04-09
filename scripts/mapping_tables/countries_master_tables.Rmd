@@ -1,0 +1,134 @@
+---
+title: "Master Tables"
+author: "Camila Vargas"
+date: "5/20/2020"
+output: html_document
+---
+
+
+This script creates the countries' master table to match countries and from the Watson's data and FAO fisheries landings and the corresponding the ISO3 code.
+Throughout the analysis, the ISO3 code is used to identify a country. 
+
+Note: countries with no ISO3 code
+|---|---|---|
+| 1| 058  |   Belgium-Luxembourg      |
+| 2| 128  |   Canton and Enderbury Is |
+| 3| 230  |   Ethiopia PDR            |
+| 4| 274  |   Gaza Strip(Palestine) |  
+| 5| 278  |   Germany,New Länder      |
+| 6| 280  |   Germany, Fed. Rep. of   |
+| 7| 402  |   West Bank               |
+| 8| 536  |   Neutral Zone            |
+| 9| 582  |   Pacific Islands Trust Tr|
+|10| 680 |    Sark                    |
+|11| 720 |    Yemen, Democratic       |
+|12| 736 |    Sudan (former)          |
+|13| 830 |    Channel Islands         |
+|14| 886 |    Yemen Arab Republic|     
+|15| 896 |    Other nei   |
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+
+```
+
+
+##Watson Country Codes
+
+The Watson data base uses number ID to identify countries. They provide a key to match countries ID with names, however those names do not match the names on the FAO landing data base.
+
+```{r}
+
+watson_codes_country <- read_excel(here::here("data/watson/watson_codes.xlsx"), sheet = "Country") %>% 
+  clean_names() %>% 
+  mutate(fao_name = str_trim(fao_name, side = "both")) %>% 
+  rename(watson_country_id = country)
+
+###
+##write_csv(watson_codes_country, here::here("mapping_tables/int/watson_codes_country.csv"))
+```
+
+We exported the Watson country codes and manually match these names with the FAO country name and the FAO landings country name.
+
+
+##Importing the csv with the matching names
+
+Note: solving encoding isssue by creating the fao_test column. However that makes all the names encoded as UTF-8 to become NAs. To solve this second issue we created a 3red column, fao_landing_name.
+
+```{r}
+
+
+watson_to_fao <- read_xlsx(here::here("mapping_tables/int/watson_fao_country_key.xlsx")) %>%
+  mutate(fao_test = ifelse(watson_c_name == "Br Virgin Is","BVI", fao_landing_c_name)) %>% 
+  mutate(fao_landing_name = ifelse(is.na(fao_test), fao_landing_c_name, fao_test)) %>% 
+  select(-fao_landing_c_name, -fao_test) %>% 
+  rename(fao_landing_c_name = fao_landing_name) %>% 
+  mutate(fao_landing_c_name = case_when(
+    fao_landing_c_name == "BVI" ~ "British Virgin Islands",
+    fao_landing_c_name == "French Polynisia" ~ "French Polynesia",
+    T ~ fao_landing_c_name))
+
+```
+
+
+##Combining watson to FAO with fao_countries
+
+Finally, to fill in the missing the ISO names and the FAO official names, we use the CL_FI_COUNTRY_GROUPS.csv file. This files comes from the capture production zip folder downloaded form the (FAO web site)[http://www.fao.org/fishery/statistics/global-capture-production/en] 
+Downloaded on May 26, 2020 and saved in the `fao_landings` folder under the name `fao_country_names_groups.csv`
+
+We combine these two data set to have all the countries names and abreviations in one master table.
+
+The final master table is saved as a csv file!
+
+```{r}
+
+fao_country_key_complete <- read_csv(here::here("data/fao_landings/fao_country_names_groups.csv"))%>% 
+  clean_names() %>% 
+  select(1:5, 11) %>% ##Selecting only english names and codes of our interest
+  rename(fao_landing_c_name = name_en)
+  
+master_countries <- fao_country_key_complete %>%
+  left_join(watson_to_fao, by = "fao_landing_c_name")
+  
+#write_csv(master_countries, here::here("mapping_tables/master_countries.csv"))
+```
+
+
+**NOTE:**
+- The FAO landings data base has data for more countries than the Watson data base. Probably some of the differences are on countries that report inland waters landings (landlock countries)
+
+
+
+##Table with FAO names from FAO website
+
+```{r}
+##Additional packages to retrived data from the web
+# install.packages("rvest")
+# library(rvest)
+```
+
+
+This is a list of all the countries that participate in the FAO. Note that not all of them have fishing activity.
+
+Note: Theses names not necesarly match the Counties name in the landings data
+Note 2: This table was an initial approach so retrive the FAO country names. We ended up not using this infomation but the file below.
+
+```{r}
+# fao_website_iso <- read_html("http://www.fao.org/countryprofiles/iso3list/en/")
+# 
+# tbls <- html_nodes(fao_website_iso, "table") %>% 
+#   html_table(fill = TRUE)
+# 
+# fao_countries <- as.data.frame(do.call(cbind, tbls)) %>% 
+#   clean_names() %>% 
+#   select(1:4) %>% 
+#   mutate(fao_name = str_remove(short_name, "(?<=\\().+")) %>% 
+#   mutate(fao_name = str_remove(fao_name, "\\(")) %>% 
+#   mutate(fao_name = str_trim(fao_name, side = "both"))
+  
+```

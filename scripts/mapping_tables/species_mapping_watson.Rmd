@@ -1,0 +1,431 @@
+---
+title: "Matching Watson taxon to Species groups"
+author: "Camila Vargas"
+date: "6/15/2020"
+output: html_document
+---
+
+This scripts explores and matches the list of taxonomic groups provided in the Watson data with taxonmic groups on the FAO data.
+
+The goal of this scropt is to create a data frame that contains all Watson's taxon key and its corresponging match with either a species or a species group in the FAO classification.
+
+##Set Up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+
+```
+
+
+### Read data
+
+1. Watson's Taxa
+
+Watson provided an Excel file with a list of all taxon identified in his data set. Note that these groups belong to different taxonomic levels from species to ISSCAAP groups
+
+```{r}
+watson_taxon_code <- read_excel(here::here("data/watson/watson_codes.xlsx"), sheet = "Taxa") %>% 
+  clean_names() %>% 
+  mutate_all(tolower) ##Sets everything to lowecase to be able to match with no issues
+```
+
+
+2. FAO Species Name Groups
+
+The FAO data is detaild at a species level. Some groups of species are grouped at a Genus level where they use the word "nei" to clasify "everything else".
+
+We used a file downloaded from the FAO Fish and Aquaculture website (See Metadata Wiki for more information) to relate english common name of species with their corresponging scientific name, taxonomic family and ISSCAAP group.
+
+Note: this data frame contains NAs in different columns
+
+Here we prepared the FAO list of species with different taxonomic groups to match with the Watson list below.
+
+```{r}
+fao_species_groups <- read_csv(here::here("data/fao_landings/fao_species_name_groups.csv")) %>% 
+  clean_names() %>% 
+  select("3alpha_code" = x3alpha_code, name_en, scientific_name, family, major_group, isscaap_group) %>% 
+  mutate_all(tolower) %>% ##Sets everything to lowecase
+  separate(scientific_name, into = c("genus", NA), remove = F) %>% ##in case we neet to match just by genus
+  mutate(name_no_nei = ifelse(str_detect(name_en, " nei"), name_en, NA)) %>% 
+  mutate(name_no_nei = str_remove(name_no_nei, " nei")) %>% ## remove the nei to be able to match with more taxon in the watson list
+  mutate(fao_group = "yes") ##to identify witch taxon were match and wich ones were not
+
+```
+
+###1. Match Taxon Name to Scientific name
+We first match scientific names.
+
+```{r}
+watson_fao_sciname <- watson_taxon_code %>%
+  rename(scientific_name = taxon_name) %>% 
+  left_join(fao_species_groups, by = "scientific_name") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "sci_name") %>% 
+  rename(taxon_name = scientific_name) %>% 
+  mutate(scientific_name = taxon_name)
+  ##filter(! "3alpha_code" %in% c("dws", "fcx", "dpx", "fgx", "ppz")) ##if we deicde to remove the duplicates this is potential way. Note thet demesal and pelargic miscellanoeus fishes are group todether in Watson and deep water sharks are grouped with sharks. The other three groups are fresh water.
+
+
+##Create a vetor with the all the 3apha codes that have been match by sci_name
+
+sci_name_list <- watson_fao_sciname %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+
+```
+
+Note: 5 taxon_key (200004, 290022, 300060, 400405, 490030) duplicated when matiching by scientific name. This means that these species have the same scientific name in the FAO list but different 3Alpha code and english name (elasmobranchii, crustacea, perciformes, gobiidae, palaemonidae)
+
+This issue should be solved when gouping everything into taxonimic Family or other larger group.
+However, there is one species that has no Family and has two different
+
+Out of the 1349 taxon listed in Watson's data, 1063 matched with a specific scientific name in the FAO list.
+
+###2. Match Taxon name to Genus
+The second match will be with the just the Genus.
+
+We take the 286 taxon that did not match with a scientific name and match the to the genus
+
+```{r}
+
+watson_fao_genus <- watson_taxon_code %>% 
+  filter(!taxon_key %in% sci_name_list) %>% ##fiters out all the taxon that were match in with sci_names
+  rename(genus = taxon_name) %>% 
+  left_join(fao_species_groups, by = "genus") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "genus") %>% 
+  rename(taxon_name = genus) %>% 
+  mutate(genus = taxon_name)
+  # mutate(spp = ifelse(str_detect(scientific_name, "spp"), "spp", "no")) %>% 
+  # group_by(taxon_key) %>% 
+  # add_tally() %>% 
+  # ungroup() %>% 
+  # mutate(keep = ifelse(n== 1, "yes", "no")) %>% 
+  # mutate(keep = ifelse(spp == "spp", "yes", keep)) %>% 
+  # filter(keep == "yes") ##Possible way to group all same taxon key into the species that has the spp in their scientific name, but not to worry for now given than we are planning on using family or larger taxonomic groups
+
+
+genus_list <- watson_fao_genus %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+
+```
+
+`watson_fao_genus` has 1857 entries, however only 161 taxon_key. This means there are multiple taxon that have more than one species within the taxon. 
+
+
+This means that out of the 286 taxon that did not match with a scientific name, 161 match with a genus. We now have 125 taxa with no FAO group
+
+###3. Match taxon name to Family
+
+```{r}
+watson_fao_family <- watson_taxon_code %>% 
+  filter(!taxon_key %in% sci_name_list) %>% ##fiters out all the taxon that were match in with sci_names
+  filter(!taxon_key %in% genus_list) %>% ##fiters out all the taxon that were match in with genus
+  rename(family = taxon_name) %>% 
+  left_join(fao_species_groups, by = "family") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "family") %>% 
+  rename(taxon_name = family) %>% 
+  mutate(family = taxon_name)
+
+
+family_list <- watson_fao_family %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+```
+
+Same than above, `watson_fao_family` has 100 entries but most of them are duplicates. Only 6 distinct raxon match with a family.
+
+We now have 119 taxon to match
+
+###4. Match taxon name to ISSCAP group
+```{r}
+watson_fao_isscaap <- watson_taxon_code %>% 
+  filter(!taxon_key %in% sci_name_list) %>% ##fiters out all the taxon that were match in with sci_names
+  filter(!taxon_key %in% genus_list) %>% ##fiters out all the taxon that were match in with genus
+  filter(!taxon_key %in% family_list) %>% ##fiters out all the taxon that were match in with family
+  rename(isscaap_group = taxon_name) %>% 
+  left_join(fao_species_groups, by = "isscaap_group") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "isscaap") %>% 
+  rename(taxon_name = isscaap_group) %>% 
+  mutate(isscaap_group = taxon_name)
+
+
+isscaap_list <- watson_fao_isscaap %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+```
+
+Note: There are several different taxon key the have the same taxon name.
+Taxon key 100338, 100038 and 100538 all belong to "sharks, rays, chimaeras" taxon.
+Taxon key 100339, 100039 and 100139 all belong to "marine fishes not identified"
+
+This means there are 12 taxon key but only 8 taxon names
+
+We now have 107 taxon to match
+
+###5. Match taxon name to Name no nei
+
+note: there were 0 match when trying to match by english name
+
+```{r}
+watson_fao_name_no_nei <- watson_taxon_code %>% 
+  filter(!taxon_key %in% c(sci_name_list, genus_list,family_list, isscaap_list)) %>% 
+  rename(name_no_nei = taxon_name) %>% 
+  left_join(fao_species_groups, by = "name_no_nei") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "name_no_nei") %>% 
+  rename(taxon_name = name_no_nei) %>% 
+  mutate(name_no_nei = taxon_name)
+
+
+no_nei_list <- watson_fao_name_no_nei %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+```
+
+There are 106 taxon with no matches. The next step is to match watson common names with each of the matching categories 
+
+###6. Match Common name to ISSCAAP groups
+
+note: no matches between common name and scinetific name, genus, family
+
+```{r}
+cn_watson_fao_isscaap <- watson_taxon_code %>% 
+  filter(!taxon_key %in% c(sci_name_list, genus_list,family_list, isscaap_list, no_nei_list)) %>% 
+  rename(isscaap_group = common_name) %>% 
+  left_join(fao_species_groups, by = "isscaap_group") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "isscaap") %>% 
+  rename(common_name = isscaap_group) %>% 
+  mutate(isscaap_group = common_name)
+
+cn_isscaap_list <- cn_watson_fao_isscaap %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+```
+
+Only 2 taxon key match with isscaap groups
+
+
+###7. Match Common name to name no nei
+
+104 taxon keys with no match
+
+```{r}
+cn_watson_fao_name_no_nei <- watson_taxon_code %>% 
+  filter(!taxon_key %in% c(sci_name_list, genus_list,family_list, isscaap_list, no_nei_list, cn_isscaap_list)) %>% 
+  rename(name_no_nei = common_name) %>% 
+  left_join(fao_species_groups, by = "name_no_nei") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "name_no_nei") %>% 
+  rename(common_name = name_no_nei) %>% 
+  mutate(name_no_nei = common_name)
+
+cn_no_nei_list <- cn_watson_fao_name_no_nei %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+```
+
+3 matches
+
+###8. Match Common name to english name
+
+101 taxon keys with no match
+
+```{r}
+cn_watson_fao_enname <- watson_taxon_code %>% 
+  filter(!taxon_key %in% c(sci_name_list, genus_list,family_list, isscaap_list, no_nei_list, cn_isscaap_list, cn_no_nei_list)) %>% 
+  rename(name_en = common_name) %>% 
+  left_join(fao_species_groups, by = "name_en") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "english name") %>% 
+  rename(common_name = name_en) %>% 
+  mutate(name_en = common_name)
+
+cn_enname_list <- cn_watson_fao_enname %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+
+```
+
+79 matches!!!
+
+
+
+###Watson taxon with no Matching FAO group
+
+There are 22 taxon with no matching group in the FAO key. Most of these taxon do have a category in the FAO species group but they did no match in the previous steps because there are differences in the way the names (common and/or scietific name)
+
+The next step is to identify how these 22 species can be match to the FAO species group.
+
+1. Removing the thrid word of the scientific name and match by scientific name
+
+There might be some discrepancy, with sub species for example __Sarda chiliensis lineolata__ was a former subspecies of __Sarda chiliensis__ and now is described as __Sarda lineolata__, but this is solved when grouping with by a larger taxonomic group.
+
+```{r}
+
+watson_fao_2words_sciname <- watson_taxon_code %>% 
+  filter(!taxon_key %in% c(sci_name_list, genus_list,family_list, isscaap_list, no_nei_list, cn_isscaap_list, cn_no_nei_list, cn_enname_list)) %>% 
+  mutate(taxon_2words = word(taxon_name, 1,2, sep=" ")) %>%  ##extract first 2 words of the taxon name
+  mutate(taxon_2words = ifelse(is.na(taxon_2words), taxon_name, taxon_2words)) %>% 
+  mutate(taxon_2words = ifelse(taxon_2words == "acanthopagrus schlegelii", "acanthopagrus schlegeli", taxon_2words)) %>% 
+  mutate(taxon_2words = ifelse(taxon_2words == "eleginus nawaga", "eleginus navaga", taxon_2words)) %>%
+  rename(scientific_name = taxon_2words) %>% 
+  left_join(fao_species_groups, by = "scientific_name") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "sci_name_2words")
+
+two_words_list <- watson_fao_2words_sciname %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+  
+
+```
+
+
+14 more taxon to match!
+
+Separate the taxon name into genus and species to be able to match by genus.
+
+```{r}
+
+watson_fao_watson_genus<- watson_taxon_code %>% 
+  filter(!taxon_key %in% c(sci_name_list, genus_list,family_list, isscaap_list, no_nei_list, cn_isscaap_list, cn_no_nei_list, cn_enname_list, two_words_list)) %>% 
+  mutate(taxon_genus = word(taxon_name)) %>% ##extract first word of the taxon name
+  rename(genus = taxon_genus) %>% 
+  left_join(fao_species_groups, by = "genus") %>% 
+  filter(fao_group =="yes") %>% 
+  mutate(match_category = "watson_genus")
+
+genus_watson_list <- watson_fao_watson_genus %>% 
+  distinct(taxon_key) %>% 
+  pull(taxon_key)
+```
+
+Last 8 taxon key!
+
+
+Check each individually in the FishBase online data base, and see what is the best way to match them
+
+holocephali --	chimaeras, ratfish, rabbitfish -- ISSCAAP: sharks, rays, chimaeras **Note: Halocephali is a sub-class therefore we can not assing a Family.
+
+clupeiformes --	herrings -- ISSCAAP: herrings, sardines, anchovies **Note: Clupeiformes is an order that includes more than one family.
+
+teuthida --	squids -- ISSCAAP: squids, cuttlefishes, octopuses **Note: Teuthida  is an order that includes more than one family.
+
+gobionotothen acuta	-- triangular notothen -- Family: nototheniidae
+
+lepidonotothen mizops --	toad notothen -- Family: nototheniidae
+lepidonotothen nudifrons --	gaudy notothen -- Family: nototheniidae
+lepidonotothen larseni --	lepidonotothen larseni -- Family: nototheniidae
+
+```{r}
+watson_no_fao<- watson_taxon_code %>% 
+  filter(!taxon_key %in% c(sci_name_list, genus_list,family_list, isscaap_list, no_nei_list, cn_isscaap_list, cn_no_nei_list, cn_enname_list, two_words_list, genus_watson_list)) %>% 
+  mutate(family = ifelse( common_name %in% c("triangular notothen", "toad notothen", "gaudy notothen", "lepidonotothen larseni"), "nototheniidae", NA)) %>%
+  mutate(isscaap_group = ifelse(family == "nototheniidae", "miscellaneous coastal fishes", NA)) %>% 
+  mutate(isscaap_group = ifelse(taxon_name == "holocephali", "sharks, rays, chimaeras", isscaap_group)) %>% ##chimaeras, ratfish, rabbitfish belong to isscaap 38 (sharks, rays, chimeras)
+  mutate(isscaap_group = ifelse(taxon_name == "clupeiformes", "herrings, sardines, anchovies", isscaap_group)) %>% 
+  mutate(isscaap_group = ifelse(taxon_name == "teuthida", "squids, cuttlefishes, octopuses", isscaap_group)) %>% 
+  mutate(isscaap_group = ifelse(taxon_name == "marine animals", "marine fishes not identified", isscaap_group)) %>% 
+  mutate(match_category = "watson_no_fao") %>% 
+  mutate("3alpha_code" = NA,
+         name_en = NA,
+         genus = NA,
+         major_group = NA,
+         name_no_nei = NA,
+         fao_group = NA,
+         scientific_name = NA)
+
+```
+
+
+Combining all together!
+
+```{r}
+all_watson_fao_species <- rbind(watson_fao_2words_sciname, watson_fao_family, watson_fao_genus,
+                                watson_fao_isscaap, watson_fao_name_no_nei, watson_fao_sciname, watson_fao_watson_genus, cn_watson_fao_enname, cn_watson_fao_isscaap, cn_watson_fao_name_no_nei, watson_no_fao)
+
+
+##remove taxon keys that have two isscaap groups
+all_watson_fao_species <- all_watson_fao_species %>% 
+  filter(!(taxon_key == 	290022 & isscaap_group == "freshwater crustaceans"),
+         !(taxon_key == 300060  & isscaap_group == "miscellaneous demersal fishes"),
+         !(taxon_key == 400080 & isscaap_group == "miscellaneous pelagic fishes"),
+         !(taxon_key == 400183 & isscaap_group == "miscellaneous freshwater fishes"),
+         !(taxon_key == 400405 & isscaap_group == "miscellaneous freshwater fishes"),
+         !(taxon_key == 490030 & isscaap_group == "freshwater crustaceans"))
+
+
+##write_csv(all_watson_fao_species, here::here("mapping_tables/master_species_watson_taxon.csv"))
+
+```
+
+Check that all Wason taxon are in the data base
+```{r}
+taxon_key <- all_watson_fao_species %>% 
+  distinct(taxon_key)
+
+setdiff(taxon_key$taxon_key, watson_taxon_code$taxon_key)
+
+setdiff(watson_taxon_code$taxon_key, taxon_key$taxon_key)
+
+##No diferences!!
+```
+
+
+Watson's key by family and ISSCAAP group
+
+```{r}
+taxon_key_family_isscaap <- all_watson_fao_species %>% 
+  select(taxon_key, taxon_name, common_name, family, isscaap_group, match_category) %>% 
+  distinct()
+```
+
+Checking for missing groups:
+```{r}
+test <- filter(taxon_key_family_isscaap, is.na(family))
+## 42 taxon have no Family assigned
+
+
+test_2 <- filter(taxon_key_family_isscaap, is.na(isscaap_group)) %>% distinct(taxon_key, .keep_all =T)
+
+##Only 4 taxon do not have a ISSCAAP group. Note these 4 taxon are part to the watson_no_fao group, so we could assing a a group. -- WE ASSING THE CORRESPODINF GROUP ACCOEDING TO FISH BASE
+##https://www.fishbase.in/report/ISSCAAP/ISSCAAPSearchMenu.php
+
+##Note, some Watson taxon have more than one ISSCAAP group. For example taxon key = 300060 belongs to miscellaneous demersal fishes and miscellaneous pelagic fishes
+
+```
+
+
+The Watson data base does not have data for 20 ISSCAAP groups. 6 of them are also not in the FAO data.
+
+ [1] "carps, barbels and other cyprinids" 
+ [2] "tilapias and other cichlids"      
+ [3] "sturgeons, paddlefishes"
+ [4] "river eels"                         
+ [5] "freshwater molluscs"                
+ **[6] "blue-whales, fin-whales"**
+ **[7] "sperm-whales, pilot-whales"**
+ **[8] "eared seals, hair seals, walruses"**  
+ **[9] "miscellaneous aquatic mammals"**
+**[10] "frogs and other amphibians"  **
+[11] "turtles"
+**[12] "crocodiles and alligators"**
+[13] "miscellaneous aquatic invertebrates"
+[14] "pearls, mother-of-pearl, shells"    
+[15] "corals"                             
+[16] "sponges"                            
+[17] "brown seaweeds"                     
+[18] "red seaweeds"                       
+[19] "green seaweeds"                     
+[20] "miscellaneous aquatic plants" 
+

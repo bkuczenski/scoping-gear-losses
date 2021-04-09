@@ -1,0 +1,115 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Setup
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+load_pak(plotting_pkgs)
+
+##colors
+area_cols <- 20
+my_colors <- colorRampPalette(brewer.pal(8, "Set2"))(area_cols)
+my_colors_2 <- colorRampPalette(brewer.pal(12, "Paired"))(area_cols)
+
+```
+
+Load data
+
+```{r}
+catch_effort_data <- read_csv(here::here("output/catch_effort_long.csv"))
+
+```
+
+Plotting function
+
+```{r}
+qr_effort_catch_vers <- function(data,
+                                 reg_color = "#33aadd") {
+   
+   mplot <- data %>%
+      #filter(GFWCategory == gear) %>% 
+      mutate(fao_area_code = as.factor(fao_area_code)) %>%
+      ggplot(aes(x = effort_moment, 
+                 y = slope_log, 
+                 label = iso3_code)) + ##label show in the display window when using ggplotly
+      geom_point(aes(color = fao_area_code, size = n_vessel)) + #, shape = fao_area_code
+      geom_text(aes(label = n_vessel), size = 2, check_overlap = T)+
+      scale_color_manual(values = my_colors_2, name = "FAO Area Code")+
+      scale_size(name = "Number of Vessels")+
+      #geom_smooth(aes(weight=n_vessel), method = "lm", se = FALSE, linetype = "dotted")+
+      geom_quantile(quantiles = seq(0.8, 0.2, by = -0.1), color = reg_color, show.legend = FALSE)+  
+      geom_quantile(quantiles = 0.9, color = reg_color, linetype= "dashed", show.legend = FALSE)+  
+           #labs(color = "Quantile")+
+      facet_wrap(~effort_type, scales = "free")+
+      theme_bw()+
+      #labs(title = paste("effort intensity by moment of effort,", gear, sep=" "))+
+     #labs(title = GFWCategory)+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white"), strip.text.x = element_text(size=10)) +
+   theme(plot.title.position = "plot",
+         legend.position = "right")+
+     guides(col = guide_legend(ncol = 2))+
+      ylab("log(effort/catch)")+ #
+      xlab("moment of effort")
+  
+
+   return(mplot)
+   
+    }
+
+```
+
+For this plot, we want two exemplary catch-effort regressions for two different gear types.
+We also want to show only data we actually used, which was as follows:
+ - longliners, length
+ - seiners, tonnage
+ - trawlers, length
+ 
+
+I say we do longliners length, seiners tonnage.  So we do the two filtrations, then
+we stick them together, and we run with the facet-wrap on effort metric- apart from
+some axis labeling it should take care of itself.
+
+```{r}
+lll <- catch_effort_data %>% filter(GFWCategory == 'drifting_longlines', 
+                                    effort_type == 'total_f_hours_length') %>%
+   mutate(effort_type = recode(effort_type, "total_f_hours_length" = "longlines, LOA"))
+   
+st <- catch_effort_data %>% filter(GFWCategory == 'seiners',
+                                   effort_type == 'total_f_hours_tonnage') %>%
+   mutate(effort_type = recode(effort_type, "total_f_hours_tonnage" = "seiners, GT"))
+
+tl <- catch_effort_data %>% filter(GFWCategory == 'trawlers', 
+                                   effort_type == 'total_f_hours_length',
+                                   iso3_code != 'CHN') %>%
+   mutate(effort_type = recode(effort_type, "total_f_hours_length" = "trawlers, LOA")) 
+
+both <- rbind(lll, st)
+
+reg_plot <- qr_effort_catch_vers(both)
+
+allthree <- rbind(tl, st, lll)
+
+r3_labels <- data.frame(effort_type = c('longlines, LOA', 'seiners, GT', 'trawlers, LOA'), 
+                        label = c('A', 'B', 'C'))
+
+reg3_plot <- qr_effort_catch_vers(allthree) + 
+   geom_text(aes(x=-Inf, y=Inf, label = label), data=r3_labels, hjust = -1, vjust=2, size = 8)
+
+```
+
+Then I need to figure out how to automatically export to a file- but for now I did it manually, resizing to 1201x554 px and exporting as EPS to output/figures/effort_moment_regression_3panel_1201_554.eps
+

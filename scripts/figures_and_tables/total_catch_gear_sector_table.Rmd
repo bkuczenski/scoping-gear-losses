@@ -1,0 +1,40 @@
+---
+title: "Total Catch per gear by sector table"
+author: "Camila Vargas"
+date: "11/19/2020"
+output: html_document
+---
+
+Create information for table 1 on our Methods paper.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+
+total_catch_gear_sector <- read_csv(here::here("output/total_catch_gear_sector.csv"))
+
+```
+
+##Tones per fishing sector
+
+**Table 1 for Methods paper**
+We reported data for 2018 in Million Tonnes per GlimanGear8, industrial and non-insutrial
+
+```{r}
+
+summary_gear_nodisc <- total_catch_gear_sector %>%
+  left_join(master_gear_gilman, by = "gear") %>% 
+  group_by(year, fisheries_sector, gilman_gear8name) %>% 
+  summarise(total_catch = sum(total_catch_fishery)) %>% 
+  group_by(year) %>% 
+  mutate(catch_year = sum(total_catch),
+         pct = (total_catch/catch_year)*100,
+         total_mill_t = total_catch/1000000) %>% 
+  ungroup()
+
+write_csv(summary_gear_nodisc, here::here("output/method_paper_t1_total_gear8.csv"))
+
+```

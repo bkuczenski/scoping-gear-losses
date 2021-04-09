@@ -1,0 +1,138 @@
+---
+title: "Catch Effort Quantile Regressions"
+author: "Camila Vargas"
+date: "11/5/2020"
+output: pdf_document
+---
+
+This scrip contains the quantile regression anaysis for the log10(catch/effort) realationship with effort moment.
+We calcilate coeficcients and p-values for trawlers, purse seiners and drifting longlines. However, the general functions `qr_calculations` and `qr_pvalue` can be applies to any gear in the GFW data.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+
+load_pak(additional_pkgs)
+
+```
+
+## Data
+
+```{r, include=FALSE, echo=FALSE}
+
+##Raw data
+catch_effort_data <- read_csv(here::here("output/catch_effort_long.csv"))
+
+```
+
+## Functions to run quantile regression and extract coefficients and p-values
+
+```{r, echo=FALSE, include=FALSE}
+
+
+tau_values <- c(0.2, 0.5, 0.6, 0.7, 0.8, 0.9)
+
+
+select_gears <- function(gear_type, effort_metric, dataset = catch_effort_data){
+  
+  return(dataset %>% 
+          filter(GFWCategory == gear_type,
+         effort_type == effort_metric,
+         !is.na(slope_log | effort_moment)) %>% 
+  select(year, iso3_code, GFWCategory, fao_area_code, n_vessel,effort_type, slope_log, effort_moment))
+}
+
+
+qr_ffcalculations <- function(gear_type, effort_metric, dataset = catch_effort_data){
+  # Do not weight by n_vessel because data for small vessels is unreliable
+  
+  catch_effort_gear <- select_gears(gear_type, effort_metric, dataset)
+ 
+  gear_weight_reg <- rq(slope_log ~ effort_moment, tau = tau_values, data = catch_effort_gear)  #, weights = n_vessel) 
+  
+  reg_r <- tidy(gear_weight_reg, se = "nid") %>%  # note that specifying se = "nid" automatically appends standard error data
+    mutate(gear = gear_type,
+           effort_type = effort_metric)
+  return(reg_r)
+}
+
+
+```
+
+## Calculations for each combination
+
+```{r, echo=FALSE, include=FALSE}
+
+##Dfrinting Longlines
+dll_length <- qr_ffcalculations(gear_type = "drifting_longlines",
+                              effort_metric = "total_f_hours_length")
+
+dll_tonnage <- qr_ffcalculations(gear_type = "drifting_longlines",
+                              effort_metric = "total_f_hours_tonnage")
+
+dll_kw <- qr_ffcalculations(gear_type = "drifting_longlines",
+                              effort_metric = "total_f_hours_kw")
+
+
+##Seiners
+seiners_length <- qr_ffcalculations(gear_type = "seiners",
+                              effort_metric = "total_f_hours_length")
+
+seiners_tonnage <- qr_ffcalculations(gear_type = "seiners",
+                              effort_metric = "total_f_hours_tonnage")
+
+seiners_kw <- qr_ffcalculations(gear_type = "seiners",
+                              effort_metric = "total_f_hours_kw")
+
+##trawlers
+
+# For Trawlers, when weighting by n_vessel (no longer recommended), it is 
+# necessary to filter out China prior to fitting the regression because their 
+# n_vessel ~= 16,000 which is far larger than any other country.
+
+# catch_effort_no_chn <- catch_effort_data %>%  filter(iso3_code != 'CHN')
+
+trawl_length <- qr_ffcalculations(gear_type = "trawlers",
+                              effort_metric = "total_f_hours_length", 
+                              dataset = catch_effort_data)
+
+trawl_tonnage <- qr_ffcalculations(gear_type = "trawlers",
+                              effort_metric = "total_f_hours_tonnage", 
+                              dataset = catch_effort_data)
+
+trawl_kw <- qr_ffcalculations(gear_type = "trawlers",
+                              effort_metric = "total_f_hours_kw", 
+                              dataset = catch_effort_data)
+
+## ALL TOGETHER
+
+all_reg_results <- rbind(dll_length, dll_tonnage, dll_kw, seiners_length, seiners_tonnage, seiners_kw, trawl_length, trawl_tonnage, trawl_kw) %>%
+  clean_names() %>% 
+  mutate(term = case_when(term == "effort_moment" ~ "coefficient",
+                          T ~ "intercept"))
+
+#all_reg_pvalue <- rbind(dll_length_p, dll_tonnage_p, dll_kw_p, seiners_length_p, seiners_tonnage_p, seiners_kw_p, trawl_length_p, #trawl_tonnage_p, trawl_kw_p) %>% 
+#  clean_names()
+
+
+#reg_results <- all_reg_results %>% 
+#  left_join(all_reg_pvalue, by = c("value", "tau", "gear", "effort_type"))
+
+
+
+```
+
+## Save results
+
+```{r}
+write_csv(all_reg_results, here::here('output/quantile_reg_results.csv'))
+
+```
+
+
+

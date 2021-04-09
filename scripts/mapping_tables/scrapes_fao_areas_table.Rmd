@@ -1,0 +1,55 @@
+---
+title: "FAO fishing areas"
+author: "Camila Vargas"
+date: "9/2/2020"
+output: html_document
+---
+This script retrives FAO areas from http://www.fao.org/fishery/area/search/en and creates a DF with all areas name and code.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+load_pak(additional_pkgs)
+
+```
+
+
+
+```{r}
+fao_website_areas <- read_html("http://www.fao.org/fishery/area/search/en")
+
+tbls <- html_nodes(fao_website_areas, "table") %>% 
+  .[5] %>% 
+  html_table(fill = TRUE)
+
+fao_fishing_areas <- as.data.frame(tbls) %>% 
+  mutate(vec = str_split(X1, "Area")) %>% 
+  unnest(vec) %>% 
+  mutate(fishing_area_code = str_remove(vec, "(?=\\().+"),
+         fishing_area_name = str_extract(vec, "(?=\\().*?(?<=\\))"),
+         fishing_area_name = str_remove(fishing_area_name, "\\("),
+         fishing_area_name = str_remove(fishing_area_name, "\\)"),
+         area = "Area") %>%
+  mutate_all(str_trim) %>% 
+  filter(!is.na(fishing_area_name)) %>%
+  mutate(fao_area_code = fishing_area_code) %>% 
+  unite(fao_area, area, fishing_area_code, sep =  " ") %>% 
+  select(fishing_area_name, fao_area, fao_area_code) %>% 
+  mutate(fishing_area_name = case_when( fishing_area_name == "Indian Ocean, Antarctic and Southern" ~ "Indian Ocean, Antarctic",
+                                        T ~ fishing_area_name))
+
+
+```
+
+
+## Save table
+
+```{r}
+write_csv(fao_fishing_areas, here::here("mapping_tables/fao_fishing_areas.csv"))
+```
+

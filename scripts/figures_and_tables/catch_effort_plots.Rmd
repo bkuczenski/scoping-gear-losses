@@ -1,0 +1,243 @@
+---
+title: "Catch-Effort Figures"
+author: "Camila Vargas"
+date: "10/5/2020"
+output: html_document
+---
+
+This script contains the functions to create catch-efoort plot used in our peoject.
+Note that we are plotting log(catch/effort) relationship and a moment of effort
+
+There are three main plot/functions where you can choose the effort metirc to plot and the gear type besed on the GFW data.
+
+- effort_moment_plot() - creates a one panel plot with all FAO areas
+- effort_moment_fao_plot() - created a multiplanel plot, each pannel correspond to data for each FAO are
+- qr_effort_catch_plot() - one panel plot with all FAO ares. Includes lines for 0.2, 0.5 and 0.8 quantile regressions
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("R/set_up.R"))
+
+##install and load packeges
+load_pak(common_packages)
+load_pak(plotting_pkgs)
+
+##colors
+area_cols <- 20
+my_colors <- colorRampPalette(brewer.pal(8, "Set2"))(area_cols)
+my_colors_2 <- colorRampPalette(brewer.pal(12, "Paired"))(area_cols)
+
+```
+
+##Read data
+
+```{r}
+
+catch_effort_data <- read_csv(here::here("output/catch_effort_long.csv"))
+
+```
+
+
+### Effort Moment plots
+
+```{r}
+
+effort_moment_plot <- function(gear_type, 
+                               effort_metric, 
+                               ordinate='slope_log', 
+                               input_data = catch_effort_data){
+  
+  mplot <- input_data %>%
+    filter(GFWCategory==gear_type, effort_type==effort_metric) %>%
+    mutate(fao_area_code = as.factor(fao_area_code)) %>% 
+    ggplot(aes(x = effort_moment, y = get(ordinate), label = iso3_code)) + ##label showa in the display windos when using ggplotly
+      geom_point(aes(color = fao_area_code, size = n_vessel)) + #, shape = fao_area_code
+      geom_text(aes(label = n_vessel), size = 2, check_overlap = T)+
+      #scale_shape_manual(values=1:20)+
+      #scale_color_manual(values = my_colors_2, name = "FAO Area Code")+
+      geom_smooth(aes(weight=n_vessel), method = "lm", se = FALSE, linetype = "dotted")+
+      geom_smooth(method = "lm", se = FALSE, linetype = "dotted", size=0.5)+
+      #facet_wrap(~effort_type)+ #wrap vertically: ncol = 1
+      theme_bw()+
+      labs(title = paste0("Effort - Catch relationship for ", gear_type))+
+      ylab(ordinate)+
+      xlab(effort_metric)+
+      theme(legend.position = "right")
+
+  #ggplotly(mplot)
+  return(mplot)
+}
+
+effort_moment_plot(gear_type = "seiners", effort_metric = "total_f_hours_tonnage")
+
+effort_moment_plot(gear_type = "drifting_longlines", effort_metric = "total_f_hours_tonnage")
+
+```
+
+
+##Facet Plots
+
+```{r}
+
+effort_moment_fao_plot <- function(gear_type, 
+                                   effort_metric, 
+                                   input_data=catch_effort_data, 
+                                   ordinate = "slope_log") {
+ 
+  filt_data <- input_data %>%
+    filter(GFWCategory == gear_type, 
+           effort_type == effort_metric) %>%
+    mutate(fao_area_code = as.factor(fao_area_code),
+           ord = get(ordinate))
+  
+  model <- lm(ord ~ effort_moment, data=filt_data)
+  
+  fao_mplot <- filt_data %>% ggplot()+ 
+      geom_smooth(method = "lm", se = TRUE, linetype = "dotted", # inherit.aes = FALSE,
+                  data = model, aes(x = effort_moment, y = ord))+
+      geom_point(aes(x = effort_moment, 
+               y = ord, color = fao_area_code, size = n_vessel)) + #, shape = fao_area_code
+      geom_text(aes(x = effort_moment, y = ord, label = n_vessel), size = 2, check_overlap = T)+
+      scale_color_manual(values = my_colors_2, name = "FAO Area Code")+
+      facet_wrap(~fao_area_code)+ #wrap vertically: ncol = 1
+      theme_bw()+
+      labs(title = paste0("Effort - Catch relationship for ", gear_type))+
+      ylab(ordinate)+
+      xlab(paste("moment of", effort_metric, sep=" "))+
+      theme(legend.position = "right")
+
+  #plot(fao_mplot)
+  return(fao_mplot)
+
+}
+
+##By GEar type
+#effort_moment_fao_plot(gear_type = "drifting_longlines", effort_metric = "total_f_hours_tonnage")
+
+#effort_moment_fao_plot(gear_type = "seiners", effort_metric = "total_f_hours_tonnage")
+
+#effort_moment_fao_plot(gear_type = "trawlers", effort_metric = "total_f_hours_tonnage")
+
+#effort_moment_fao_plot(gear_type = "set_gillnets", effort_metric = "total_f_hours_tonnage")
+
+```
+
+
+## Quantile regression plots
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.fullwidth=TRUE, fig.width=8, fig.height=6}
+
+
+ qr_effort_catch_plot <- function(gear,
+                                  data = catch_effort_data) {
+   
+   mplot <- data %>%
+      filter(GFWCategory == gear) %>% 
+      mutate(fao_area_code = as.factor(fao_area_code)) %>%
+      ggplot(aes(x = effort_moment, 
+                 y = slope_log, 
+                 label = iso3_code)) + ##label show in the display window when using ggplotly
+      geom_point(aes(color = fao_area_code, size = n_vessel)) + #, shape = fao_area_code
+      geom_text(aes(label = n_vessel), size = 2, check_overlap = T)+
+      scale_color_manual(values = my_colors_2, name = "FAO Area Code")+
+      scale_size(name = "Number of Vessels")+
+      #geom_smooth(aes(weight=n_vessel), method = "lm", se = FALSE, linetype = "dotted")+
+      #geom_quantile(quantiles = c(0.8, 0.5, 0.2), aes(weight = n_vessel, colour = as.factor(..quantile..)))+
+      geom_quantile(quantiles = 0.8, aes(color = "0.8"), color = "red")+
+      geom_quantile(quantiles = 0.5, aes(color = "0.5"), color = "green")+
+      geom_quantile(quantiles = 0.2, aes(color = "0.2"), color = "blue")+
+      labs(color = "Quantile")+
+      facet_wrap(~effort_type, scales = "free")+
+      theme_bw()+
+      #labs(title = gear)+
+      labs(title = paste0( "<b><span style = 'font-size: 16pt'> Plot for ",
+                           gear,
+                       "</span></span></b>",
+                       "</b><br> <span style = 'font-size:12pt'>",
+                       "Quantile Regressions Lines ",
+                       "<span style = 'color: red;'>",
+                       "**0.8**, ",
+                       "<span style = 'color:green;'>",
+                       "**0.5**, ",
+                       "</span></span></b>",
+                       "and ",
+                       "<span style = 'color:blue;'>",
+                       "**0.2**",
+                       "</span></span></b>"))+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white")) +
+   theme(plot.title.position = "plot",
+         legend.position = "right")+
+      ylab("log(effort/catch)")+ #
+      xlab(paste("moment of", gsub('^.*_', '', "effort"), sep=" "))
+  
+
+   return(mplot)
+   
+    }
+
+qr_effort_catch_regs <- function(gear,
+                                  data = catch_effort_data,
+                                 reg_color = "#33aadd") {
+   
+   mplot <- data %>%
+      filter(GFWCategory == gear) %>% 
+      mutate(fao_area_code = as.factor(fao_area_code)) %>%
+      ggplot(aes(x = effort_moment, 
+                 y = slope_log, 
+                 label = iso3_code)) + ##label show in the display window when using ggplotly
+      geom_point(aes(color = fao_area_code, size = n_vessel)) + #, shape = fao_area_code
+      geom_text(aes(label = n_vessel), size = 2, check_overlap = T)+
+      scale_color_manual(values = my_colors_2, name = "FAO Area Code")+
+      scale_size(name = "Number of Vessels")+
+      #geom_smooth(aes(weight=n_vessel), method = "lm", se = FALSE, linetype = "dotted")+
+      geom_quantile(quantiles = seq(0.8, 0.2, by = -0.1), color = reg_color, show.legend = FALSE)+  
+      geom_quantile(quantiles = 0.9, color = reg_color, linetype= "dashed", show.legend = FALSE)+  
+           #labs(color = "Quantile")+
+      facet_wrap(~effort_type, scales = "free")+
+      theme_bw()+
+      #labs(title = paste("effort intensity by moment of effort,", gear, sep=" "))+
+     labs(title = gear)+
+    theme(plot.title = ggtext::element_textbox_simple(
+      size = 13,
+      face = NULL,
+      lineheight = 1.75,
+      padding = margin(5, 5, 0, 5),
+      margin = margin(0, 0, 10, 0),#top,right,bottom,left.
+      fill = "white")) +
+   theme(plot.title.position = "plot",
+         legend.position = "right")+
+     guides(col = guide_legend(ncol = 2))+
+      ylab("log(effort/catch)")+ #
+      xlab("moment of effort")
+  
+
+   return(mplot)
+   
+    }
+
+
+for (k in c("seiners", "trawlers", "drifting_longlines")) {
+  ggsave(here::here(paste("output/figures/fig2-effort-intensity-", k, ".eps", sep="")), qr_effort_catch_regs(k), device="eps", width=320, height=160, units="mm", dpi="print", scale=0.8)
+}
+
+
+for (k in c("seiners", "trawlers", "drifting_longlines")) {
+  ggsave(here::here(paste("output/figures/fig2-ei-compact-", k, ".eps", sep="")), qr_effort_catch_regs(k), device="eps", width=320, height=130, units="mm", dpi="print", scale=0.8)
+}
+
+qr_effort_catch_plot(gear = "trawlers")
+
+qr_effort_catch_plot(gear = "seiners")
+
+qr_effort_catch_plot(gear = "drifting_longlines")
+
+```
+
