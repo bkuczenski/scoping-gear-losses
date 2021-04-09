@@ -302,7 +302,12 @@ industrial_catch_gfw_cat <- industrial_fisheries  %>%
 
 ### Tuna Catch
 
+
+tuna_spc is major tuna species according to https://www.iccat.int/en/stat_codes.html
+
 ```{r, echo=FALSE}
+tuna_spc <- c("bft", "yft", "alb", "bet", "skj", "sai", "swo", "bum", "whm", "spf")
+
 tuna_ps_ind <- fao_fisheries %>%
   left_join(fisheries_info, by = c("iso3_code", "fishery_name", "fao_area_code", "fishery_id", "gear")) %>%
   left_join(master_gear_discard) %>% 
@@ -417,6 +422,8 @@ Rows to include:
  - total (Perez Roda) catch by GFW category for set_gillnets, pots_and_traps????
 
 ```{r, echo=FALSE}
+table_gfw_categories <- c('seiners', 'trawlers', 'drifting_longlines', 'set_gillnets', 'pots_and_traps', 'driftnets')
+
 summ_fao <- fao_17_18 %>% group_by(year) %>% summarise(fao_catch = sum(landings_spc_area)) %>% ungroup()
 
 summ_match <- total_catch_sector %>% group_by(year) %>% 
@@ -465,8 +472,6 @@ total_summ %>% as_tibble(rownames="Observation") %>%
 Note: `vessel_char` can only be computed with the GFW dataset.
 
 ```{r}
-
-table_gfw_categories <- c('seiners', 'trawlers', 'drifting_longlines', 'set_gillnets', 'pots_and_traps', 'driftnets')
 
 effort_summary <- effort_bins %>% filter(GFWCategory %in% table_gfw_categories) %>% 
   group_by(year, GFWCategory) %>% 

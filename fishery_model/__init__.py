@@ -1,12 +1,34 @@
 from .gear_library import gml_init
-from .gear_loss_estimators import GearLossEstimators
+from .gear_loss_estimators import GearLossEstimators, unit_samples, total_across
+
+from math import floor, ceil
+from statistics import median
+import pandas as pd
+
+
+class InputDataNotFound(Exception):
+    pass
 
 
 def tnc_gear_loss_params(**filters):
-    gml = gml_init()
+    try:
+        gml = gml_init()
+    except FileNotFoundError:
+        raise InputDataNotFound('quantile_reg_results.csv missing: Run R script "3-quantile_reg.Rmd"')
+    except ImportError:
+        print('Try "pip install -r requirements.txt"')
+        raise
+
     study = GearLossEstimators(gml, **filters)
-    study.init_proxy_set('set_gillnets')
-    study.init_dfad_set('seiners')
+    try:
+        study.init_proxy_set('set_gillnets')
+    except FileNotFoundError:
+        raise InputDataNotFound('catch_effort_ind.csv missing: Run R script "2-match_catch_effort.Rmd"')
+
+    try:
+        study.init_dfad_set('seiners')
+    except FileNotFoundError:
+        raise InputDataNotFound('catch_effort_ind.csv missing: Run R script "2-match_catch_effort.Rmd"')
 
     study.init_gfw_set('drifting_longlines', 'total_f_hours_length', tau='0.5')
     study.init_gfw_set('drifting_longlines', 'total_f_hours_length', tau='0.7')
@@ -21,3 +43,38 @@ def tnc_gear_loss_params(**filters):
     study.init_gfw_set('trawlers', 'total_f_hours_length', tau='0.9')
 
     return study
+
+
+
+def conf_95(_data):
+    _ss = sorted(_data)
+    _ln = len(_ss)
+    return _ss[int(floor(0.05*_ln))], _ss[int(ceil(0.95*_ln))]
+
+
+def _ddd(arg, nam):
+    _c5, _c95 = conf_95(arg)
+    return {
+        '%s_median' % nam : '%.3g' % median(arg),
+        '%s_05' % nam: '%.3g' % _c5,
+        '%s_95' % nam: '%.3g' % _c95
+    }
+
+
+def _make_pd_row(nam, tau, **kwargs):
+    d = {'Gear': nam,
+         'tau': tau
+        }
+    for k, v in kwargs.items():
+        d.update(_ddd(v, k))
+    return d
+
+
+def simulation_table(study):
+    stats = [('Trawlers', float(k.tau), k) for k in sorted(study.result_sets(gear='trawlers'), key=lambda x: x.tau)]
+    stats.extend([('Seiners', float(k.tau), k) for k in sorted(study.result_sets(gear='seiners'), key=lambda x: x.tau)])
+    stats.extend([('Longlines', float(k.tau), k)
+                  for k in sorted(study.result_sets(gear='drifting_longlines'), key=lambda x: x.tau)])
+    stats.append(('Set Gillnets', pd.NA, next(study.proxy_sets(gear='set_gillnets'))))
+    stats.append(('Drifting FADs', pd.NA, next(study.proxy_sets(gear='FADs'))))
+    return pd.DataFrame((_make_pd_row(k, l, unit=list(unit_samples(m)), diss=total_across(m)) for k, l, m in stats))

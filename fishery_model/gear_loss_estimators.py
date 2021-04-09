@@ -115,3 +115,53 @@ class GearLossEstimators(object):
 
     def dissipation_table(self):
         return DataFrame(chain(*(_g.table() for _g in self.dissipation_models)), columns=COLUMN_ORDER)
+
+    def result_sets(self, gear=None, effort=None, tau=None):
+        for res in self._gfw:
+            if gear is not None:
+                if res.gear != gear:
+                    continue
+            if effort is not None:
+                if res.effort != effort:
+                    continue
+            if tau is not None:
+                if res.tau != tau:
+                    continue
+            yield res
+
+    def proxy_sets(self, gear=None):
+        for res in self._prox:
+            if gear is not None:
+                if res.gear != gear:
+                    continue
+            yield res
+
+
+# Analysis Methods
+# These take a result-set as input and generate lists of numeric results from the simulation samples
+# n = number of samples / iterations
+# N = number of fisheries
+
+
+def total_across(_res):
+    # total across all fisheries, for each iteration - this is total dissipated mass for the iteration
+    return [sum(_res.scores(j)) for j in range(_res.n)]
+
+
+def unit_samples(_res):
+    # chain together all samples indicating gear intensity (will have length n * N)
+    for det in chain(*(_res.details(t) for t in range(_res.n))):
+        yield det['sample'].gear_kg
+
+
+def unit_diss(_res):
+    # chain together all samples indicating dissipation intensity (will have length n * N)
+    for det in chain(*(_res.details(t) for t in range(_res.n))):
+        yield det['sample'].diss_kg
+
+
+# disused-- vessel number is too undercounted to use for this purpose
+def vessel_samples(_res):
+    # chain together gear intensity per vessel
+    for det in chain(*(_res.details(t) for t in range(_res.n))):
+        yield det['gear'] / det['n_vessel']

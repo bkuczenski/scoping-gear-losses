@@ -24,6 +24,10 @@ class ProtoResultSet(GearGroupResults):
         raise NotImplementedError
 
     @property
+    def gear(self):
+        return self._gear
+
+    @property
     def gear_types(self):
         return {
             'GFWCategory': self._gear
@@ -121,6 +125,14 @@ class GFWResultSet(ProtoResultSet):
         self._tau = tau or ''
 
         self._effort = []
+
+    @property
+    def effort(self):
+        return self._eff
+
+    @property
+    def tau(self):
+        return self._tau
 
     def _make_frs_summary(self, frs, **kwargs):
         s = super(GFWResultSet, self)._make_frs_summary(frs, **kwargs)

@@ -26,7 +26,7 @@ This section is executed in R. We recommend Rstudio. This code requires the data
     1. cleans_fao_datarepository.Rmd
     2. match_catch_effort.Rmd
     3. quantile_reg.Rmd
- 4. If desired, review scripts in `scripts/figures_and_tables` for visualization.
+ 4. If desired, review scripts in `scripts/figures_and_tables` for visualization options.
 
 ### Part 2 - Gear Loss Simulations
 

@@ -1,1 +1,3 @@
 pandas>=1.1.3
+stats-arrays>=0.6.4
+synonym-dict>=0.1.1

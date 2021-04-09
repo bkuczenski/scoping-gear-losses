@@ -58,6 +58,10 @@ class TunaDFADResultSet(ProtoResultSet):
     _valid_gears = ('seiners',)
 
     @property
+    def gear(self):
+        return 'FADs'
+
+    @property
     def gear_types(self):
         return {
             'FADs': ['Purse Seine Drifting FADs', 'Purse Seine Anchored FADs']
