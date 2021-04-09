@@ -1,0 +1,29 @@
+{
+  "source_name": "Banks and Zaharia 2020",
+  "source_doi": "",
+  "source_documentation": "Characterization of the costs and benefits related to lost and/or abandoned Fish Aggregating Devices in the Western and Central Pacific Ocean",
+  "effort_models": [
+    {
+      "name": "Fish Aggregating Devices - Tuna Purse Seine Fisheries",
+      "gear_types": {
+        "FADs": "Purse Seine Drifting FADs"
+      },
+      "catch_unit": "One tonne landed catch",
+      "scaling_unit": "Number of FADs",
+      "op_unit": "Year of operation",
+      "effort_model": ["triangular", 0.021, 0.03, 0.035],
+      "documentation": "See capture-research.ods.  44700-64900 FAD deployments over 1.8-2.1 Mt catch."
+    }
+  ],
+  "gear_models": [
+    {
+      "name": "Fish Aggregating Devices - Drifting FADs",
+      "gear_types": {
+        "FADs": "Purse Seine Drifting FADs"
+      },
+      "scaling_unit": "Number of FADs",
+      "intensity_model": ["uniform", 20.0, 80.0],
+      "documentation": "80-160 m2 net at 0.18-0.2 kg/m2, 50-250 m of rope at 0.15-0.2 kg/m"
+    }
+  ]
+}

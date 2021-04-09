@@ -1,0 +1,20 @@
+fishing_area_name,fao_area,fao_area_code
+Arctic Sea,Area 18,18
+"Atlantic, Northwest",Area 21,21
+"Atlantic, Northeast",Area 27,27
+"Atlantic, Western Central",Area 31,31
+"Atlantic, Eastern Central",Area 34,34
+Mediterranean and Black Sea,Area 37,37
+"Atlantic, Southwest",Area 41,41
+"Atlantic, Southeast",Area 47,47
+"Atlantic, Antarctic",Area 48,48
+"Indian Ocean, Western",Area 51,51
+"Indian Ocean, Eastern",Area 57,57
+"Indian Ocean, Antarctic",Area 58,58
+"Pacific, Northwest",Area 61,61
+"Pacific, Northeast",Area 67,67
+"Pacific, Western Central",Area 71,71
+"Pacific, Eastern Central",Area 77,77
+"Pacific, Southwest",Area 81,81
+"Pacific, Southeast",Area 87,87
+"Pacific, Antarctic",Area 88,88

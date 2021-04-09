@@ -1,0 +1,51 @@
+isscaap_main_code,isscaap_code,isscaap_group,isscaap_main,discard_species_group
+1,11,"carps, barbels and other cyprinids",Freshwater fishes,NA
+1,12,tilapias and other cichlids,Freshwater fishes,NA
+1,13,miscellaneous freshwater fishes,Freshwater fishes,NA
+2,21,"sturgeons, paddlefishes",Diadromous fishes,demersal fish
+2,22,river eels,Diadromous fishes,demersal fish
+2,23,"salmons, trouts, smelts",Diadromous fishes,pelargic fish
+2,24,shads,Diadromous fishes,pelargic fish
+2,25,miscellaneous diadromous fishes,Diadromous fishes,pelargic fish
+3,31,"flounders, halibuts, soles",Marine fishes,demersal fish
+3,32,"cods, hakes, haddocks",Marine fishes,pelargic fish
+3,33,miscellaneous coastal fishes,Marine fishes,pelargic fish
+3,34,miscellaneous demersal fishes,Marine fishes,demersal fish
+3,35,"herrings, sardines, anchovies",Marine fishes,pelargic fish
+3,36,"tunas, bonitos, billfishes",Marine fishes,tuna
+3,37,miscellaneous pelagic fishes,Marine fishes,pelargic fish
+3,38,"sharks, rays, chimaeras",Marine fishes,demersal fish
+3,39,marine fishes not identified,Marine fishes,pelargic fish
+4,41,freshwater crustaceans,Crustaceans,crustaceans
+4,42,"crabs, sea-spiders",Crustaceans,crustaceans
+4,43,"lobsters, spiny-rock lobsters",Crustaceans,crustaceans
+4,44,"king crabs, squat-lobsters",Crustaceans,crustaceans
+4,45,"shrimps, prawns",Crustaceans,crustaceans
+4,46,"krill, planktonic crustaceans",Crustaceans,crustaceans
+4,47,miscellaneous marine crustaceans,Crustaceans,crustaceans
+5,51,freshwater molluscs,Molluscs,shellfish
+5,52,"abalones, winkles, conchs",Molluscs,shellfish
+5,53,oysters,Molluscs,shellfish
+5,54,mussels,Molluscs,shellfish
+5,55,"scallops, pectens",Molluscs,shellfish
+5,56,"clams, cockles, arkshells",Molluscs,shellfish
+5,57,"squids, cuttlefishes, octopuses",Molluscs,cephalopods
+5,58,miscellaneous marine molluscs,Molluscs,shellfish
+6,61,"blue-whales, fin-whales","Whales, seals and other aquatic mammals",NA
+6,62,"sperm-whales, pilot-whales","Whales, seals and other aquatic mammals",NA
+6,63,"eared seals, hair seals, walruses","Whales, seals and other aquatic mammals",NA
+6,64,miscellaneous aquatic mammals,"Whales, seals and other aquatic mammals",NA
+7,71,frogs and other amphibians,Miscellaneous aquatic animals,other
+7,72,turtles,Miscellaneous aquatic animals,other
+7,73,crocodiles and alligators,Miscellaneous aquatic animals,other
+7,74,sea-squirts and other tunicates,Miscellaneous aquatic animals,other
+7,75,horseshoe crabs and other arachnoids,Miscellaneous aquatic animals,other
+7,76,sea-urchins and other echinoderms,Miscellaneous aquatic animals,other
+7,77,miscellaneous aquatic invertebrates,Miscellaneous aquatic animals,other
+8,81,"pearls, mother-of-pearl, shells",Miscellaneous aquatic animal products,other
+8,82,corals,Miscellaneous aquatic animal products,other
+8,83,sponges,Miscellaneous aquatic animal products,other
+9,91,brown seaweeds,Aquatic plants,other
+9,92,red seaweeds,Aquatic plants,other
+9,93,green seaweeds,Aquatic plants,other
+9,94,miscellaneous aquatic plants,Aquatic plants,other

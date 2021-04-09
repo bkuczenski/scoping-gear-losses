@@ -1,0 +1,275 @@
+un_code,identifier,iso2_code,iso3_code,fao_landing_c_name,official_name_en,watson_country_id,watson_c_name,fao_c_name
+0,380,EU,EUR,European Union,The European Union (Member Organization),NA,NA,NA
+004,2,AF,AFG,Afghanistan,The Islamic Republic of Afghanistan,NA,NA,Afghanistan
+008,3,AL,ALB,Albania,the Republic of Albania,8,Albania,Albania
+010,30,AQ,ATA,Antarctica others,Antarctica,NA,NA,NA
+012,4,DZ,DZA,Algeria,the People's Democratic Republic of Algeria,12,Algeria,Algeria
+016,5,AS,ASM,American Samoa,American Samoa,16,Amer Samoa,American Samoa
+020,6,AD,AND,Andorra,the Principality of Andorra,NA,NA,Andorra
+024,7,AO,AGO,Angola,the Republic of Angola,24,Angola,Angola
+028,8,AG,ATG,Antigua and Barbuda,Antigua and Barbuda,28,Antigua Barb,Antigua and Barbuda
+031,52,AZ,AZE,Azerbaijan,the Republic of Azerbaijan,NA,NA,Azerbaijan
+032,9,AR,ARG,Argentina,the Argentine Republic,32,Argentina,Argentina
+036,10,AU,AUS,Australia,Australia,36,Australia,Australia
+040,11,AT,AUT,Austria,the Republic of Austria,NA,NA,Austria
+044,12,BS,BHS,Bahamas,the Commonwealth of the Bahamas,44,Bahamas,Bahamas
+048,13,BH,BHR,Bahrain,the Kingdom of Bahrain,48,Bahrain,Bahrain
+050,16,BD,BGD,Bangladesh,the People's Republic of Bangladesh,50,Bangladesh,Bangladesh
+051,1,AM,ARM,Armenia,the Republic of Armenia,NA,NA,Armenia
+052,14,BB,BRB,Barbados,Barbados,52,Barbados,Barbados
+056,255,BE,BEL,Belgium,the Kingdom of Belgium,56,Belgium,Belgium
+058,15,NA,NA,Belgium-Luxembourg,NA,NA,NA,NA
+060,17,BM,BMU,Bermuda,Bermuda,60,Bermuda,Bermuda
+064,18,BT,BTN,Bhutan,the Kingdom of Bhutan,NA,NA,Bhutan
+068,19,BO,BOL,Bolivia (Plurinat.State),the Plurinational State of Bolivia,NA,NA,Bolivia
+070,80,BA,BIH,Bosnia and Herzegovina,Bosnia and Herzegovina,70,Bosnia Herzg,Bosnia and Herzegovina
+072,20,BW,BWA,Botswana,the Republic of Botswana,NA,NA,Botswana
+074,31,BV,BVT,Bouvet Island,Bouvet Island,NA,NA,NA
+076,21,BR,BRA,Brazil,the Federative Republic of Brazil,76,Brazil,Brazil
+084,23,BZ,BLZ,Belize,Belize,84,Belize,Belize
+086,24,IO,IOT,British Indian Ocean Ter,British Indian Ocean Territory,86,Br Ind Oc Tr,NA
+090,25,SB,SLB,Solomon Islands,Solomon Islands,90,Solomon Is.,Solomon Islands
+092,239,VG,VGB,British Virgin Islands,British Virgin Islands,92,Br Virgin Is,NA
+096,26,BN,BRN,Brunei Darussalam,Brunei Darussalam,96,Brunei Darsm,Brunei Darussalam
+100,27,BG,BGR,Bulgaria,the Republic of Bulgaria,100,Bulgaria,Bulgaria
+104,28,MM,MMR,Myanmar,the Republic of the Union of Myanmar,104,Myanmar,Myanmar
+108,29,BI,BDI,Burundi,the Republic of Burundi,NA,NA,NA
+112,57,BY,BLR,Belarus,the Republic of Belarus,NA,NA,Belarus
+116,115,KH,KHM,Cambodia,the Kingdom of Cambodia,116,Cambodia,Cambodia
+120,32,CM,CMR,Cameroon,the Republic of Cameroon,120,Cameroon,Cameroon
+124,33,CA,CAN,Canada,Canada,124,Canada,Canada
+128,34,NA,NA,Canton and Enderbury Is,NA,NA,NA,NA
+132,35,CV,CPV,Cabo Verde,Republic of Cabo Verde,132,Cape Verde,Cabo Verde
+136,36,KY,CYM,Cayman Islands,Cayman Islands,136,Cayman Is,Cayman Islands
+140,37,CF,CAF,Central African Republic,the Central African Republic,NA,NA,Central African Republic
+144,38,LK,LKA,Sri Lanka,the Democratic Socialist Republic of Sri Lanka,144,Sri Lanka,Sri Lanka
+148,39,TD,TCD,Chad,the Republic of Chad,NA,NA,Chad
+152,40,CL,CHL,Chile,the Republic of Chile,152,Chile,Chile
+156,41,CN,CHN,China,the People's Republic of China,156,China Main,China
+158,214,TW,TWN,Taiwan Province of China,Taiwan Province of China,157,Taiwan,NA
+162,42,CX,CXR,Christmas Island,Christmas Island,NA,NA,NA
+166,43,CC,CCK,Cocos (Keeling) Islands,Cocos (Keeling) Islands,NA,NA,NA
+170,44,CO,COL,Colombia,the Republic of Colombia,170,Colombia,Colombia
+174,45,KM,COM,Comoros,the Union of the Comoros,174,Comoros,Comoros
+175,270,YT,MYT,Mayotte,Mayotte,175,Mayotte,NA
+178,46,CG,COG,Congo,the Republic of the Congo,178,Congo Rep,Congo
+180,250,CD,COD,"Congo, Dem. Rep. of the",the Democratic Republic of the Congo,180,Congo Dem Rep,Democratic Republic of the Congo
+184,47,CK,COK,Cook Islands,the Cook Islands,184,Cook Is.,Cook Islands
+188,48,CR,CRI,Costa Rica,the Republic of Costa Rica,188,Costa Rica,Costa Rica
+191,98,HR,HRV,Croatia,the Republic of Croatia,191,Croatia,Croatia
+192,49,CU,CUB,Cuba,the Republic of Cuba,192,Cuba,Cuba
+196,50,CY,CYP,Cyprus,the Republic of Cyprus,196,Cyprus,Cyprus
+200,51,NA,CSK,Czechoslovakia,Czechoslovakia,NA,NA,NA
+203,167,CZ,CZE,Czechia,the Czech Republic,NA,NA,NA
+204,53,BJ,BEN,Benin,the Republic of Benin,204,Benin,Benin
+208,54,DK,DNK,Denmark,the Kingdom of Denmark,208,Denmark,Denmark
+212,55,DM,DMA,Dominica,the Commonwealth of Dominica,212,Dominica,Dominica
+214,56,DO,DOM,Dominican Republic,the Dominican Republic,214,Dominican Rp,Dominican Republic
+218,58,EC,ECU,Ecuador,the Republic of Ecuador,218,Ecuador,Ecuador
+222,60,SV,SLV,El Salvador,the Republic of El Salvador,222,El Salvador,El Salvador
+226,61,GQ,GNQ,Equatorial Guinea,the Republic of Equatorial Guinea,226,Eq Guinea,Equatorial Guinea
+230,62,NA,NA,Ethiopia PDR,NA,NA,NA,NA
+231,238,ET,ETH,Ethiopia,the Federal Democratic Republic of Ethiopia,NA,NA,Ethiopia
+232,178,ER,ERI,Eritrea,the State of Eritrea,111,Eritrea,Eritrea
+233,63,EE,EST,Estonia,the Republic of Estonia,233,Estonia,Estonia
+234,64,FO,FRO,Faroe Islands,Faroe Islands,234,Faeroe Is,Faroe Islands
+238,65,FK,FLK,Falkland Is.(Malvinas),the Falkland Islands (Malvinas),238,Falkland Is,NA
+239,271,GS,SGS,SouthGeorgia/Sandwich Is,South Georgia and the South Sandwich Islands,NA,NA,NA
+242,66,FJ,FJI,Fiji,the Republic of Fiji,242,Fiji,Fiji
+246,67,FI,FIN,Finland,the Republic of Finland,246,Finland,Finland
+248,282,AX,ALA,Åland Islands,Åland Islands,NA,NA,NA
+250,68,FR,FRA,France,the French Republic,250,France,France
+254,69,GF,GUF,French Guiana,French Guiana,254,Fr Guiana,NA
+258,70,PF,PYF,French Polynesia,French Polynesia,258,Fr Polynesia,French Polynisia
+260,71,TF,ATF,French Southern Terr,French Southern and Antarctic Territories,NA,NA,NA
+262,72,DJ,DJI,Djibouti,the Republic of Djibouti,262,Djibouti,Djibouti
+266,74,GA,GAB,Gabon,the Gabonese Republic,266,Gabon,Gabon
+268,73,GE,GEO,Georgia,Georgia,268,Georgia,Georgia
+270,75,GM,GMB,Gambia,the Republic of the Gambia,270,Gambia,Gambia
+274,76,NA,NA,Gaza Strip(Palestine),NA,NA,NA,NA
+275,299,PS,PSE,Palestine,Palestine,423,Palestine,NA
+276,79,DE,DEU,Germany,the Federal Republic of Germany,276,Germany,Germany
+278,77,NA,NA,"Germany,New Länder",NA,NA,NA,NA
+280,78,NA,NA,"Germany, Fed. Rep. of",NA,NA,NA,NA
+288,81,GH,GHA,Ghana,the Republic of Ghana,288,Ghana,Ghana
+292,82,GI,GIB,Gibraltar,Gibraltar,292,Gibraltar,NA
+296,83,KI,KIR,Kiribati,the Republic of Kiribati,296,Kiribati,Kiribati
+300,84,GR,GRC,Greece,the Hellenic Republic,300,Greece,Greece
+304,85,GL,GRL,Greenland,Greenland,304,Greenland,NA
+308,86,GD,GRD,Grenada,Grenada,308,Grenada,Grenada
+312,87,GP,GLP,Guadeloupe,Guadeloupe,312,Guadeloupe,NA
+316,88,GU,GUM,Guam,Guam,316,Guam,NA
+320,89,GT,GTM,Guatemala,the Republic of Guatemala,320,Guatemala,Guatemala
+324,90,GN,GIN,Guinea,the Republic of Guinea,324,Guinea,Guinea
+328,91,GY,GUY,Guyana,the Co-operative Republic of Guyana,328,Guyana,Guyana
+332,93,HT,HTI,Haiti,the Republic of Haiti,332,Haiti,Haiti
+334,92,HM,HMD,Heard and McDonald Is.,Heard Island and McDonald Island,NA,NA,NA
+336,94,VA,VAT,Holy See,Holy See,NA,NA,NA
+340,95,HN,HND,Honduras,the Republic of Honduras,340,Honduras,Honduras
+344,96,HK,HKG,"China, Hong Kong SAR","China, Hong Kong Special Administrative Region",344,Hong Kong,NA
+348,97,HU,HUN,Hungary,Hungary,NA,NA,Hungary
+352,99,IS,ISL,Iceland,the Republic of Iceland,352,Iceland,Iceland
+356,100,IN,IND,India,the Republic of India,356,India,India
+360,101,ID,IDN,Indonesia,the Republic of Indonesia,360,Indonesia,Indonesia
+364,102,IR,IRN,Iran (Islamic Rep. of),the Islamic Republic of Iran,364,Iran,Iran
+368,103,IQ,IRQ,Iraq,the Republic of Iraq,368,Iraq,Iraq
+372,104,IE,IRL,Ireland,Ireland,372,Ireland,Ireland
+376,105,IL,ISR,Israel,the State of Israel,376,Israel,Israel
+380,106,IT,ITA,Italy,the Republic of Italy,380,Italy,Italy
+384,107,CI,CIV,Côte d'Ivoire,the Republic of Côte d'Ivoire,384,Cote d'Ivoire,NA
+388,109,JM,JAM,Jamaica,Jamaica,388,Jamaica,Jamaica
+392,110,JP,JPN,Japan,Japan,392,Japan,Japan
+396,111,JT,JTN,Johnston Island,Johnston Island,NA,NA,NA
+398,108,KZ,KAZ,Kazakhstan,the Republic of Kazakhstan,NA,NA,Kazakhstan
+400,112,JO,JOR,Jordan,the Hashemite Kingdom of Jordan,400,Jordan,Jordan
+402,245,NA,NA,West Bank,The West Bank,NA,NA,NA
+404,114,KE,KEN,Kenya,the Republic of Kenya,404,Kenya,Kenya
+408,116,KP,PRK,"Korea, Dem. People's Rep",the Democratic People's Republic of Korea,408,Korea D P Rp,Democratic People's Republic of Korea
+410,117,KR,KOR,"Korea, Republic of",the Republic of Korea,410,Korea Rep,Republic of Korea
+414,118,KW,KWT,Kuwait,the State of Kuwait,414,Kuwait,Kuwait
+417,113,KG,KGZ,Kyrgyzstan,the Kyrgyz Republic,NA,NA,Kyrgyzstan
+418,120,LA,LAO,Lao People's Dem. Rep.,the Lao People's Democratic Republic,NA,NA,Lao People's Democratic Republic
+422,121,LB,LBN,Lebanon,the Lebanese Republic,422,Lebanon,Lebanon
+426,122,LS,LSO,Lesotho,the Kingdom of Lesotho,NA,NA,Lesotho
+428,119,LV,LVA,Latvia,the Republic of Latvia,428,Latvia,Latvia
+430,123,LR,LBR,Liberia,the Republic of Liberia,430,Liberia,Liberia
+434,124,LY,LBY,Libya,State of Libya,434,Libya,Libya
+438,125,LI,LIE,Liechtenstein,the Principality of Liechtenstein,NA,NA,NA
+440,126,LT,LTU,Lithuania,the Republic of Lithuania,440,Lithuania,Lithuania
+442,256,LU,LUX,Luxembourg,the Grand Duchy of Luxembourg,NA,NA,Luxembourg
+446,128,MO,MAC,"China, Macao SAR","China, Macao SAR",446,Macau,NA
+450,129,MG,MDG,Madagascar,the Republic of Madagascar,450,Madagascar,Madagascar
+454,130,MW,MWI,Malawi,the Republic of Malawi,NA,NA,Malawi
+458,131,MY,MYS,Malaysia,Malaysia,458,Malaysia,Malaysia
+462,132,MV,MDV,Maldives,the Republic of Maldives,462,Maldives,Maldives
+466,133,ML,MLI,Mali,the Republic of Mali,NA,NA,Mali
+470,134,MT,MLT,Malta,the Republic of Malta,470,Malta,Malta
+474,135,MQ,MTQ,Martinique,Martinique,474,Martinique,NA
+478,136,MR,MRT,Mauritania,the Islamic Republic of Mauritania,478,Mauritania,Mauritania
+480,137,MU,MUS,Mauritius,the Republic of Mauritius,480,Mauritius,Mauritius
+484,138,MX,MEX,Mexico,the United Mexican States,484,Mexico,Mexico
+488,139,MI,MID,Midway Islands,Midway Island,NA,NA,NA
+492,140,MC,MCO,Monaco,the Principality of Monaco,492,Monaco,Monaco
+496,141,MN,MNG,Mongolia,Mongolia,NA,NA,NA
+498,146,MD,MDA,"Moldova, Republic of",the Republic of Moldova,NA,NA,NA
+499,273,ME,MNE,Montenegro,Montenegro,892,Montenegro,Montenegro
+500,142,MS,MSR,Montserrat,Montserrat,500,Montserrat,NA
+504,143,MA,MAR,Morocco,the Kingdom of Morocco,504,Morocco,Morocco
+508,144,MZ,MOZ,Mozambique,the Republic of Mozambique,508,Mozambique,Mozambique
+512,221,OM,OMN,Oman,the Sultanate of Oman,512,Oman,Oman
+516,147,NA,NAM,Namibia,the Republic of Namibia,516,Namibia,Namibia
+520,148,NR,NRU,Nauru,the Republic of Nauru,520,Nauru,Nauru
+524,149,NP,NPL,Nepal,Federal Democratic Republic of Nepal,NA,NA,Nepal
+528,150,NL,NLD,Netherlands,the Kingdom of the Netherlands,528,Netherlands,Netherlands
+530,151,AN,ANT,Netherlands Antilles,Netherlands Antilles,532,NethAntilles,NA
+531,286,CW,CUW,Curaçao,Curaçao,534,Curaçao,NA
+533,22,AW,ABW,Aruba,Aruba,533,Aruba,NA
+534,289,SX,SXM,Sint Maarten,Sint Maarten (Dutch Part),NA,NA,NA
+535,283,BQ,BES,Bonaire/S.Eustatius/Saba,"Bonaire, Sint Eustatius and Saba",NA,NA,NA
+536,152,NA,NA,Neutral Zone,NA,NA,NA,NA
+540,153,NC,NCL,New Caledonia,New Caledonia,540,New Caledonia,NA
+548,155,VU,VUT,Vanuatu,the Republic of Vanuatu,548,Vanuatu,Vanuatu
+554,156,NZ,NZL,New Zealand,New Zealand,554,New Zealand,New Zealand
+558,157,NI,NIC,Nicaragua,the Republic of Nicaragua,558,Nicaragua,Nicaragua
+562,158,NE,NER,Niger,the Republic of the Niger,NA,NA,NA
+566,159,NG,NGA,Nigeria,the Federal Republic of Nigeria,566,Nigeria,Nigeria
+570,160,NU,NIU,Niue,the Republic of Niue,570,Niue,Niue
+574,161,NF,NFK,Norfolk Island,Territory of Norfolk Island,574,Norfolk I.,NA
+578,162,NO,NOR,Norway,the Kingdom of Norway,578,Norway,Norway
+580,163,MP,MNP,Northern Mariana Is.,Northern Mariana Islands,580,N Marianas,NA
+581,232,UM,UMI,US Minor Outlying Is.,the United States Minor Islands,NA,NA,NA
+582,164,NA,NA,Pacific Islands Trust Tr,Pacific Islands Trust Territory,NA,NA,NA
+583,145,FM,FSM,"Micronesia, Fed.States of",the Federated States of Micronesia,583,Micronesia,Micronesia
+584,127,MH,MHL,Marshall Islands,the Republic of the Marshall Islands,584,Marshall Is,Marshall Islands
+585,180,PW,PLW,Palau,the Republic of Palau,585,Palau,Palau
+586,165,PK,PAK,Pakistan,the Islamic Republic of Pakistan,586,Pakistan,Pakistan
+591,166,PA,PAN,Panama,the Republic of Panama,591,Panama,Panama
+598,168,PG,PNG,Papua New Guinea,Independent State of Papua New Guinea,598,Papua N Guin,Papua New Guinea
+600,169,PY,PRY,Paraguay,the Republic of Paraguay,NA,NA,Paraguay
+604,170,PE,PER,Peru,the Republic of Peru,604,Peru,Peru
+608,171,PH,PHL,Philippines,the Republic of the Philippines,608,Philippines,Philippines
+612,172,PN,PCN,Pitcairn Islands,Pitcairn Islands,612,Pitcairn Is,NA
+616,173,PL,POL,Poland,the Republic of Poland,616,Poland,Poland
+620,174,PT,PRT,Portugal,the Portuguese Republic,620,Portugal,Portugal
+624,175,GW,GNB,Guinea-Bissau,the Republic of Guinea-Bissau,624,GuineaBissau,Guinea-Bissau
+626,176,TL,TLS,Timor-Leste,the Democratic Republic of Timor-Leste,626,Timor Leste,Timor-Leste
+630,177,PR,PRI,Puerto Rico,Puerto Rico,630,Puerto Rico,NA
+634,179,QA,QAT,Qatar,the State of Qatar,634,Qatar,Qatar
+638,182,RE,REU,Réunion,Réunion,638,Reunion,NA
+642,183,RO,ROU,Romania,Romania,642,Romania,Romania
+643,185,RU,RUS,Russian Federation,the Russian Federation,643,Russian Fed,Russian Federation
+646,184,RW,RWA,Rwanda,the Republic of Rwanda,NA,NA,Rwanda
+652,287,BL,BLM,Saint Barthélemy,Saint Barthélemy,NA,NA,NA
+654,187,SH,SHN,Saint Helena,"Saint Helena, Ascension and Tristan da Cunha",654,St Helena,NA
+659,188,KN,KNA,Saint Kitts and Nevis,Saint Kitts and Nevis,659,St Kitts Nev,Saint Kitts and Nevis
+660,258,AI,AIA,Anguilla,Anguilla,660,Anguilla,Anguilla
+662,189,LC,LCA,Saint Lucia,Saint Lucia,662,St Lucia,Saint Lucia
+663,288,MF,MAF,Saint-Martin,Saint-Martin (French Part),NA,NA,NA
+666,190,PM,SPM,St. Pierre and Miquelon,Saint Pierre and Miquelon,666,St Pier Mq,NA
+670,191,VC,VCT,Saint Vincent/Grenadines,Saint Vincent and the Grenadines,670,St Vincent,Saint Vincent and the Grenadines
+674,192,SM,SMR,San Marino,the Republic of San Marino,NA,NA,San Marino
+678,193,ST,STP,Sao Tome and Principe,the Democratic Republic of Sao Tome and Principe,678,Sao Tome Prn,Sao Tome and Principe
+680,294,NA,NA,Sark,NA,NA,NA,NA
+682,194,SA,SAU,Saudi Arabia,the Kingdom of Saudi Arabia,682,Saudi Arabia,Saudi Arabia
+686,195,SN,SEN,Senegal,the Republic of Senegal,686,Senegal,Senegal
+688,272,RS,SRB,Serbia,the Republic of Serbia,NA,NA,NA
+690,196,SC,SYC,Seychelles,the Republic of Seychelles,690,Seychelles,Seychelles
+694,197,SL,SLE,Sierra Leone,the Republic of Sierra Leone,694,Sierra Leone,Sierra Leone
+702,200,SG,SGP,Singapore,the Republic of Singapore,702,Singapore,Singapore
+703,199,SK,SVK,Slovakia,the Slovak Republic,NA,NA,Slovakia
+704,237,VN,VNM,Viet Nam,the Socialist Republic of Viet Nam,704,Viet Nam,Viet Nam
+705,198,SI,SVN,Slovenia,the Republic of Slovenia,705,Slovenia,Slovenia
+706,201,SO,SOM,Somalia,the Federal Republic of Somalia,706,Somalia,Somalia
+710,202,ZA,ZAF,South Africa,the Republic of South Africa,710,South Africa,South Africa
+716,181,ZW,ZWE,Zimbabwe,the Republic of Zimbabwe,NA,NA,Zimbabwe
+720,247,NA,NA,"Yemen, Democratic",NA,NA,NA,NA
+724,203,ES,ESP,Spain,the Kingdom of Spain,724,Spain,Spain
+728,290,SS,SSD,South Sudan,the Republic of South Sudan,NA,NA,South Sudan
+729,298,SD,SDN,Sudan,the Republic of the Sudan,736,Sudan,Sudan
+732,205,EH,ESH,Western Sahara,Western Sahara,NA,NA,NA
+736,206,NA,NA,Sudan (former),the Republic of the Sudan,NA,NA,NA
+740,207,SR,SUR,Suriname,the Republic of Suriname,740,Suriname,Suriname
+744,260,SJ,SJM,Svalbard and Jan Mayen,Svalbard and Jan Mayen Islands,NA,NA,NA
+748,209,SZ,SWZ,Eswatini,the Kingdom of Eswatini,NA,NA,Eswatini
+752,210,SE,SWE,Sweden,the Kingdom of Sweden,752,Sweden,Sweden
+756,211,CH,CHE,Switzerland,the Swiss Confederation,NA,NA,NA
+760,212,SY,SYR,Syrian Arab Republic,the Syrian Arab Republic,760,Syria,Syrian Arab Republic
+762,208,TJ,TJK,Tajikistan,the Republic of Tajikistan,NA,NA,NA
+764,216,TH,THA,Thailand,the Kingdom of Thailand,764,Thailand,Thailand
+768,217,TG,TGO,Togo,the Togolese Republic,768,Togo,Togo
+772,218,TK,TKL,Tokelau,Tokelau,772,Tokelau,Tokelau
+776,219,TO,TON,Tonga,the Kingdom of Tonga,776,Tonga,Tonga
+780,220,TT,TTO,Trinidad and Tobago,the Republic of Trinidad and Tobago,780,Trinidad Tob,Trinidad and Tobago
+784,225,AE,ARE,United Arab Emirates,the United Arab Emirates,784,Untd Arab Em,United Arab Emirates
+788,222,TN,TUN,Tunisia,the Republic of Tunisia,788,Tunisia,Tunisia
+792,223,TR,TUR,Turkey,the Republic of Turkey,792,Turkey,Turkey
+795,213,TM,TKM,Turkmenistan,Turkmenistan,NA,NA,NA
+796,224,TC,TCA,Turks and Caicos Is.,Turks and Caicos Islands,796,Turks Caicos,NA
+798,227,TV,TUV,Tuvalu,Tuvalu,798,Tuvalu,Tuvalu
+800,226,UG,UGA,Uganda,the Republic of Uganda,NA,NA,Uganda
+804,230,UA,UKR,Ukraine,Ukraine,804,Ukraine,Ukraine
+807,154,MK,MKD,North Macedonia,the Republic of North Macedonia,NA,NA,NA
+810,228,SU,SUN,Un. Sov. Soc. Rep.,Union of Soviet Socialist Republics,810,Former USSR,NA
+818,59,EG,EGY,Egypt,the Arab Republic of Egypt,818,Egypt,Egypt
+826,229,GB,GBR,United Kingdom,the United Kingdom of Great Britain and Northern Ireland,826,UK,United Kingdom of Great Britain and Northern Ireland
+830,259,NA,NA,Channel Islands,Channel Islands,830,Channel Is,NA
+831,284,GG,GGY,Guernsey,Bailiwick of Guernsey,NA,NA,NA
+832,285,JE,JEY,Jersey,Bailiwick of Jersey,NA,NA,NA
+833,264,IM,IMN,Isle of Man,Isle of Man,833,Isle of Man,NA
+834,215,TZ,TZA,"Tanzania, United Rep. of",the United Republic of Tanzania,834,Tanzania,United Republic of Tanzania
+835,276,NA,EAZ,Zanzibar,Zanzibar,NA,NA,NA
+840,231,US,USA,United States of America,the United States of America,840,USA,United States of America
+850,240,VI,VIR,US Virgin Islands,the United States Virgin Islands,850,US Virgin Is,NA
+854,233,BF,BFA,Burkina Faso,Burkina Faso,NA,NA,Burkina Faso
+858,234,UY,URY,Uruguay,the Eastern Republic of Uruguay,858,Uruguay,Uruguay
+860,235,UZ,UZB,Uzbekistan,the Republic of Uzbekistan,NA,NA,NA
+862,236,VE,VEN,"Venezuela, Boliv Rep of",the Bolivarian Republic of Venezuela,862,Venezuela,Venezuela
+872,242,WK,WAK,Wake Island,Wake Island,NA,NA,NA
+876,243,WF,WLF,Wallis and Futuna Is.,Wallis and Futuna Islands,876,Wallis Fut I,NA
+882,244,WS,WSM,Samoa,the Independent State of Samoa,882,Samoa,Samoa
+886,246,NA,NA,Yemen Arab Republic,NA,NA,NA,NA
+887,249,YE,YEM,Yemen,the Republic of Yemen,887,Yemen,Yemen
+890,248,YU,YUG,Yugoslavia SFR,Socialist Federal Republic of Yugoslavia,890,Yugoslavia,NA
+891,186,CS,SCG,Serbia and Montenegro,Serbia and Montenegro,891,Serbia,NA
+894,251,ZM,ZMB,Zambia,the Republic of Zambia,NA,NA,Zambia
+896,252,NA,NA,Other nei,Others,999,Other nei,NA

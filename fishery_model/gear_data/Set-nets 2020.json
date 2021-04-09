@@ -1,0 +1,46 @@
+{
+  "source_name": "Set gillnets CPUE models - Kuczenski, Musyl, Gilman 2020",
+  "source_doi": "",
+  "source_documentation": "",
+  "effort_models": [
+    {
+      "name": "Reported CPUE - Demersal set gillnets",
+      "gear_types": {
+        "GilmanGear25Code": ["GNB", "GNS"]
+      },
+      "catch_unit": "One tonne landed catch",
+      "scaling_unit": "Square meter of net",
+      "op_unit": "Gear set",
+      "op_equiv": {
+        "Gear set": 1.0,
+        "Year of operation": 0.004545
+      },
+      "effort_model": {
+        "Cook Isl.": ["triangular", 554.3, 3030.3, 35714.3],
+        "Fiji / Rabi Isl.": ["triangular", 5769.2, 11904.8, 20000],
+        "Fiji / Rotjuma": ["triangular", 3816.7, 10801.9, 45800],
+        "PNG / Rabaul": ["triangular", 5223.9, 17500, 100000],
+        "Tonga": ["triangular", 13888.9, 25000, 35714.3],
+        "Seychelles": ["triangular", 666.7, 1346.5, 2631.6],
+        "Puerto Rico gill": ["triangular", 12820.5, 72815.5, 625000],
+        "Puerto Rico tramm": ["triangular", 11764.7, 64655.2, 800000],
+        "Martinique tramm": ["triangular", 21645, 43731.8, 125000],
+        "Altinagac Aegean": ["triangular", 108015, 140474, 159120],
+        "GN Surveys I": ["triangular", 45714, 85714, 252000],
+        "GN Surveys II": ["triangular", 275000, 450000, 800000]
+      },
+      "documentation": "See capture-research.ods.  Assume 220 sets per year."
+    }
+  ],
+  "gear_models": [
+    {
+      "name": "Musyl Set-net model",
+      "gear_types": {
+        "GilmanGear25Code": ["GNB", "GNS"]
+      },
+      "scaling_unit": "Square meter of net",
+      "intensity_model": ["triangular", 0.035, 0.065, 0.109],
+      "documentation": "70g floats, 27g line, 12g net; see Gillnet model spreadsheet"
+    }
+  ]
+}

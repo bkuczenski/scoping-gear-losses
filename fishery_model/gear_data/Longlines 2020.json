@@ -1,0 +1,16 @@
+{
+  "source_name": "Longline gear characterization data",
+  "source_doi": "",
+  "source_documentation": "",
+  "gear_models": [
+    {
+      "name": "Musyl Gilman Longline outreach",
+      "gear_types": {
+        "GFWCategory": "drifting_longlines"
+      },
+      "scaling_unit": "Vessel length in meters",
+      "intensity_model": ["triangular", 20.1, 33.8, 61.7],
+      "documentation": "Musyl model 1.03 kg per hook, of which 760g mainline, 200g floats\nSurvey data n=14 tuna longline worldwide\nkg gear per m LOA"
+    }
+  ]
+}

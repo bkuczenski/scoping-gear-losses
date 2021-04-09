@@ -1,0 +1,42 @@
+{
+  "source_name": "Seiner data gathered for Kuczenski et al 2020",
+  "source_doi": "",
+  "source_documentation": "",
+  "gear_models": [
+    {
+      "name": "Seiners - reported",
+      "gear_types": {
+        "GFWCategory": "seiners"
+      },
+      "scaling_unit": "Gross Tonnage of vessel",
+      "intensity_model": {
+        "norway offshore lo": [ "triangular", 1.6, 3.2, 5.6 ],
+        "norway offshore hi": [ "triangular", 2.252, 4.504, 7.882],
+        "norway inshore lo": [ "triangular", 8.4, 16.8, 29.4],
+        "norway inshore hi": [ "triangular", 16, 32, 56],
+        "spain lo": [ "triangular", 11.68, 23.36, 40.88],
+        "spain hi": [ "triangular", 27.692, 55.384, 96.922],
+        "portugal lo": [ "triangular", 10.08, 20.16, 35.28],
+        "indonesia lo": [ "triangular", 12.4, 24.8, 43.4],
+        "indonesia mid": [ "triangular", 19.7, 39.4, 68.95],
+	"indonesia hi": [ "triangular", 33.916, 67.832, 118.706]
+      },
+      "documentation": "Marcalo et al 2019 - data on norway, spain, portugal\nIsman16prf for IND\nplus Zhou 2019, Pravin etc for net weights\nRemoved 'portugal hi': [ 'triangular', 40.4, 80.8, 141.4] as outlier"
+    }
+  ],
+  "dissipation_models": [
+    {
+      "name": "Expert Reports - Purse Seine Tuna",
+      "documentation": "Observer reports and personal communications\nless than 1 percent typical loss, no-observed-loss reported for some yearlong periods",
+      "gear_types": {
+        "WatsonFleetGearName": "Purse seine Tuna",
+        "GilmanGear25Description": "Purse seine"
+      },
+      "op_unit": "Year of operation",
+      "dissipation_model": [
+        "triangular",0.005, 0.000, 0.015
+      ],
+      "dissipation_type": "loss-fragments"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "user note": "Quantities specified here might not be part of the standard reference library but are required to specify some models in this directory",
+  "quantities": {
+    "catch": [
+      ["Kilowatt-hour proxy catch", "kw*h"],
+      ["Vessel meter LOA-hour proxy catch", "LOA*h"],
+      ["Vessel gross tonnage-hour proxy catch", "GT*h"]
+    ],
+    "scaling": [
+      ["Number of FADs", "n FAD"]
+    ]
+  }
+}
