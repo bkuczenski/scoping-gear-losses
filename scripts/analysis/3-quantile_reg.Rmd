@@ -14,9 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 source(here::here("R/set_up.R"))
 
-##install and load packeges
-load_pak(common_packages)
-
 load_pak(additional_pkgs)
 
 ```
