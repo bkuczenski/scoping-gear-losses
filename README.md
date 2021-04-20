@@ -1,3 +1,5 @@
+![](https://zenodo.org/badge/doi/10.5281/zenodo.4706051.svg)
+
 # scoping-gear-losses
 Estimation of lost fishing gear based on observed vessel activity
 
