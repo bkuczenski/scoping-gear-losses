@@ -143,8 +143,13 @@ class GearLossEstimators(object):
 # N = number of fisheries
 
 
+def total_operation(_res):
+    # total operation across all fisheries - this is kg*hour of gear dragged through the water for the iteration
+    return [sum([k['gear'] for k in _res.details(j)]) for j in range(_res.N)]
+
+
 def total_across(_res):
-    # total across all fisheries, for each iteration - this is total dissipated mass for the iteration
+    # total score across all fisheries, for each iteration - this is total dissipated mass for the iteration
     return [sum(_res.scores(j)) for j in range(_res.n)]
 
 
