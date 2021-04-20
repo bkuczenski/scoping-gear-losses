@@ -424,7 +424,7 @@ Rows to include:
 ```{r, echo=FALSE}
 table_gfw_categories <- c('seiners', 'trawlers', 'drifting_longlines', 'set_gillnets', 'pots_and_traps', 'driftnets')
 
-summ_fao <- fao_17_18 %>% group_by(year) %>% summarise(fao_catch = sum(landings_spc_area)) %>% ungroup()
+summ_fao <- fao_17_18 %>% group_by(year) %>% summarise(catch = sum(landings_spc_area)) %>% ungroup()
 
 summ_match <- total_catch_sector %>% group_by(year) %>% 
   summarise(pr_catch = sum(total_catch_fishery), pr_capture = sum(catch_w_discard)) %>%

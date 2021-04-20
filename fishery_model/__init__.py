@@ -1,5 +1,5 @@
 from .gear_library import gml_init
-from .gear_loss_estimators import GearLossEstimators, unit_samples, total_across
+from .gear_loss_estimators import GearLossEstimators, unit_samples, total_across, total_operation
 
 from math import floor, ceil
 from statistics import median
@@ -77,4 +77,4 @@ def simulation_table(study):
                   for k in sorted(study.result_sets(gear='drifting_longlines'), key=lambda x: x.tau)])
     stats.append(('Set Gillnets', pd.NA, next(study.proxy_sets(gear='set_gillnets'))))
     stats.append(('Drifting FADs', pd.NA, next(study.proxy_sets(gear='FADs'))))
-    return pd.DataFrame((_make_pd_row(k, l, unit=list(unit_samples(m)), diss=total_across(m)) for k, l, m in stats))
+    return pd.DataFrame((_make_pd_row(k, l, unit=list(unit_samples(m)), oper=total_operation(m), diss=total_across(m)) for k, l, m in stats))

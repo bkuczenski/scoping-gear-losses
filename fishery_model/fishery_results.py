@@ -182,7 +182,11 @@ class GearGroupResults(object):
 
     def scores(self, i):
         if int(i) < self.n:
-            return [f.scale(i) for f in self._frs]
+            return [f.scale(i) for f in self._frs]  # should be equivalent to [f.detail(i)['dissipation'] for f in _frs]
+
+    def operation(self, i):
+        if int(i) < self.n:
+            return [f.detail(i)['gear'] for f in self._frs]
 
     def details(self, i):
         if int(i) < self.n:

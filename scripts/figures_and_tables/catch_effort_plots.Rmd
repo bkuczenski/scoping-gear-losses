@@ -5,7 +5,7 @@ date: "10/5/2020"
 output: html_document
 ---
 
-This script contains the functions to create catch-efoort plot used in our peoject.
+This script contains the functions to create catch-effort plot used in our project.
 Note that we are plotting log(catch/effort) relationship and a moment of effort
 
 There are three main plot/functions where you can choose the effort metirc to plot and the gear type besed on the GFW data.
@@ -201,7 +201,8 @@ qr_effort_catch_regs <- function(gear,
       geom_quantile(quantiles = seq(0.8, 0.2, by = -0.1), color = reg_color, show.legend = FALSE)+  
       geom_quantile(quantiles = 0.9, color = reg_color, linetype= "dashed", show.legend = FALSE)+  
            #labs(color = "Quantile")+
-      facet_wrap(~effort_type, scales = "free")+
+      #facet_wrap(~effort_type, scales = "free")+
+     facet_wrap(~fao_area_code, scales = "free")+
       theme_bw()+
       #labs(title = paste("effort intensity by moment of effort,", gear, sep=" "))+
      labs(title = gear)+
@@ -233,11 +234,13 @@ for (k in c("seiners", "trawlers", "drifting_longlines")) {
   ggsave(here::here(paste("output/figures/fig2-ei-compact-", k, ".eps", sep="")), qr_effort_catch_regs(k), device="eps", width=320, height=130, units="mm", dpi="print", scale=0.8)
 }
 
-qr_effort_catch_plot(gear = "trawlers")
+tr <- qr_effort_catch_regs(gear = "trawlers")
 
-qr_effort_catch_plot(gear = "seiners")
+ggplotly(tr)
 
-qr_effort_catch_plot(gear = "drifting_longlines")
+qr_effort_catch_regs(gear = "seiners")
+
+qr_effort_catch_regs(gear = "drifting_longlines")
 
 ```
 
