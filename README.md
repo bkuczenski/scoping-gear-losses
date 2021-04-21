@@ -3,6 +3,10 @@
 # scoping-gear-losses
 Estimation of lost fishing gear based on observed vessel activity
 
+**Note: the `main` branch does not include results!**
+
+Please checkout `populated` to find output files in the `output` folder-- or run the code according to the instructions below to regenerate them from inputs.
+
 ## Project Description
 The goal of this project is to estimate the flow of fishing gear into the sea that results from normal industrial fishing activity.  We attempt to model the relationship between effort and catch by linking reports of landed fishery catch with observations of fishing effort using telemetry data from Global Fishing Watch.  We then use the resulting relationship to estimate the dissipation of fishing gear using stochastic simulation.
 
