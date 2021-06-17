@@ -17,7 +17,7 @@ The code for organizing catch and effort data was written in R.  There are three
  2. `match_catch_effort.Rmd` Assign catch to fisheries and match with GFW effort data. Used to generate most of the output data used in the simulation and the paper.
  3. `quantile_reg.Rmd` Compute quantile regression results for effort intensity, used to estimate total fishing effort.
 
-Thereafter, the effort intensity models are linked to gear intensity and dissipation models to predict gear losses.  This step happens in python using the [unit gears](https://github.com/bkuczenski/unit_gears) framework (JIE article). The code for this step is found in the `fishery_model` python package.
+Thereafter, the effort intensity models are linked to gear intensity and dissipation models to predict gear losses.  This step happens in python using the [unit gears](https://github.com/bkuczenski/unit_gears) framework ([JIE article](https://doi.org/10.1111/jiec.13156)). The code for this step is found in the `fishery_model` python package.
 
 
 ## To reproduce the study results
