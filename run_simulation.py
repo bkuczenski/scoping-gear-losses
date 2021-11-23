@@ -1,4 +1,4 @@
-from fishery_model import tnc_gear_loss_params, simulation_table
+from fishery_model import run_study, simulation_table
 
 import argparse
 
@@ -14,15 +14,6 @@ parser = argparse.ArgumentParser(description='Run Gear Loss Simulations')
 parser.add_argument('-n', action='store', default=1000, type=int, help='number of iterations to run (default 1000)')
 parser.add_argument('-year', action='store', type=str, help='specify year (default is all years)')
 parser.add_argument('-f', action='store_true', help='whether to generate figures')
-
-
-def run_study(n=1000, **filters):
-    st = tnc_gear_loss_params(**filters)
-
-    print('Executing gear loss study with n=%d iterations' % n)
-    st.n_gfw = n
-    st.n_prox = n
-    return st
 
 
 if __name__ == '__main__':

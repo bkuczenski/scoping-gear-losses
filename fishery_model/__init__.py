@@ -70,6 +70,15 @@ def _make_pd_row(nam, tau, **kwargs):
     return d
 
 
+def run_study(n=1000, **filters):
+    st = tnc_gear_loss_params(**filters)
+
+    print('Executing gear loss study with n=%d iterations' % n)
+    st.n_gfw = n
+    st.n_prox = n
+    return st
+
+
 def simulation_table(study):
     stats = [('Trawlers', float(k.tau), k) for k in sorted(study.result_sets(gear='trawlers'), key=lambda x: x.tau)]
     stats.extend([('Seiners', float(k.tau), k) for k in sorted(study.result_sets(gear='seiners'), key=lambda x: x.tau)])
@@ -78,3 +87,25 @@ def simulation_table(study):
     stats.append(('Set Gillnets', pd.NA, next(study.proxy_sets(gear='set_gillnets'))))
     stats.append(('Drifting FADs', pd.NA, next(study.proxy_sets(gear='FADs'))))
     return pd.DataFrame((_make_pd_row(k, l, unit=list(unit_samples(m)), oper=total_operation(m), diss=total_across(m)) for k, l, m in stats))
+
+
+def _make_fishery_row(gear, tau, f_res):
+    d = {'Country': f_res.fishery.country,
+         'FAO': f_res.fishery.fao,
+         'Year': f_res.fishery.year,
+         'Gear': gear,
+         'tau': tau}
+    oper = [f_res.detail(k)['gear'] for k in range(f_res.n)]
+    diss = [f_res.detail(k)['dissipation'] for k in range(f_res.n)]
+    unit = [f_res.detail(k)['sample'].gear_kg for k in range(f_res.n)]
+
+    d.update(_ddd(unit, 'unit'))
+    d.update(_ddd(oper, 'oper'))
+    d.update(_ddd(diss, 'diss'))
+    return d
+
+
+def per_fishery_table(study, gear, tau):
+    result_set = next(study.result_sets(gear=gear, tau=tau))
+
+    return pd.DataFrame((_make_fishery_row(gear, tau, result_set[k]) for k in range(result_set.N)))
