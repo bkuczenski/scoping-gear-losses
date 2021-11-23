@@ -22,6 +22,7 @@ class GearLossEstimators(object):
         self._e = set()
         self._g = set()
         self._d = set()
+        print('filters\n%s' % self.filters)
 
     def _append_model(self, m):
         self._e.add(m.effort)
@@ -145,7 +146,7 @@ class GearLossEstimators(object):
 
 def total_operation(_res):
     # total operation across all fisheries - this is kg*hour of gear dragged through the water for the iteration
-    return [sum([k['gear'] for k in _res.details(j)]) for j in range(_res.N)]
+    return [sum([k['gear'] for k in _res.details(j)]) for j in range(_res.n)]
 
 
 def total_across(_res):
