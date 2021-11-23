@@ -46,6 +46,28 @@ This section is executed in python.
 
 For interactive or custom use, please review the two notebooks in the `jupyter` directory, as well as the documentation for `unit_gears`.
 
+### Per-fishery Results
+
+The study object can also be used for many other queries.  For instance, a table of gear use and dissipation per 
+logical fishery can be produced by indexing across the result sets differently, as shown in 
+`fishery_model.per_fishery_table()`:
+
+    >>> import fishery_model
+    >>> st = fishery_model.run_study(n=55, year='2018')
+    >>> fishery_model.per_fishery_table(st, 'trawlers', '0.9')
+         Country FAO  Year      Gear  tau unit_median unit_05 unit_95 oper_median   oper_05   oper_95 diss_median   diss_05   diss_95
+    0       AGO  47  2018  trawlers  0.9        5.64    1.75    20.5     5.2e+05  1.61e+05  1.89e+06    1.66e+04  4.02e+03  7.76e+04
+    1       ARG  41  2018  trawlers  0.9        4.07    1.51    17.9    4.96e+06  1.84e+06  2.18e+07    1.75e+05  6.19e+04   6.7e+05
+    2       AUS  71  2018  trawlers  0.9        8.58    2.56      28    7.88e+05  2.35e+05  2.57e+06    2.39e+04   8.9e+03  8.89e+04
+    3       AUS  81  2018  trawlers  0.9        7.86    2.17    19.6    1.07e+05  2.95e+04  2.67e+05    3.53e+03  1.19e+03     8e+03
+    4       BEL  27  2018  trawlers  0.9        6.17    2.42    42.7    2.55e+05     1e+05  1.76e+06    9.19e+03  3.37e+03  5.05e+04
+    ..      ...  ..   ...       ...  ...         ...     ...     ...         ...       ...       ...         ...       ...       ...
+    108     USA  77  2018  trawlers  0.9        7.15    1.94    34.6     2.9e+04  7.85e+03   1.4e+05    1.02e+03       269   5.6e+03
+    109     VNM  71  2018  trawlers  0.9        7.13    2.35    27.1    6.94e+06  2.29e+06  2.64e+07    2.35e+05  7.74e+04  1.13e+06
+    110     ZAF  47  2018  trawlers  0.9        5.57    1.32    21.6    8.74e+05  2.07e+05  3.39e+06    2.61e+04  7.57e+03  1.13e+05
+    111     ZAF  51  2018  trawlers  0.9        7.33    2.11    17.7    3.29e+03       948  7.95e+03        87.8      30.1       278
+    112      NA  27  2018  trawlers  0.9        9.27    1.91    28.5    2.63e+03       543  8.09e+03        89.8      18.7       295
+    >>>
 
 ## Repository Structure
 
