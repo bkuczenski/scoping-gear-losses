@@ -49,7 +49,7 @@ def tnc_gear_loss_params(**filters):
 def conf_95(_data):
     _ss = sorted(_data)
     _ln = len(_ss)
-    return _ss[int(floor(0.05*_ln))], _ss[int(ceil(0.95*_ln))]
+    return _ss[int(floor(0.05*_ln))], _ss[int(ceil(0.95*_ln)) - 1]
 
 
 def _ddd(arg, nam):
